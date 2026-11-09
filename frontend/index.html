@@ -87,6 +87,29 @@
                     <p id="rankInfo">Carregando...</p>
                     <div class="actions">
                         <button class="btn btn-ghost" id="refreshRank" type="button">🔄 Atualizar</button>
+                        <button class="btn btn-primary" id="rosterToggle" type="button">➕ Adicionar jogador</button>
+                    </div>
+                </div>
+
+                <!-- Painel de cadastro: só abre depois de digitar a senha do grupo. -->
+                <div class="roster-panel" id="rosterPanel" hidden>
+                    <form class="roster-add" id="rosterAdd">
+                        <input type="text" id="rosterNew" maxlength="200" autocomplete="off"
+                               placeholder="Cole o link do op.gg (ex.: https://op.gg/lol/summoners/br/Nick-BR1) ou digite o nick">
+                        <button class="btn btn-primary" type="submit">Adicionar</button>
+                    </form>
+
+                    <p class="roster-status" id="rosterStatus" role="status"></p>
+
+                    <div class="roster-tools">
+                        <h3 class="history-title">Jogadores cadastrados</h3>
+                        <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
+                    </div>
+
+                    <div class="roster" id="rosterList"></div>
+
+                    <div class="roster-foot">
+                        <button class="btn btn-ghost btn-sm" id="rosterLock" type="button">🔒 Bloquear edição neste navegador</button>
                     </div>
                 </div>
 
@@ -109,35 +132,6 @@
 
                 <h3 class="history-title">Últimas partidas</h3>
                 <div class="history" id="history"></div>
-            </div>
-        </section>
-
-        <section class="roster-section">
-            <h2 class="section-title">Jogadores</h2>
-
-            <div class="card">
-                <div class="players-top">
-                    <p id="rosterInfo">
-                        Os nicks cadastrados aqui aparecem como sugestão nos campos do sorteio.
-                    </p>
-                    <div class="actions">
-                        <button class="btn btn-ghost" id="rosterLock" type="button">🔓 Desbloquear edição</button>
-                    </div>
-                </div>
-
-                <form class="roster-add" id="rosterAdd" hidden>
-                    <input type="text" id="rosterNew" maxlength="200" autocomplete="off"
-                           placeholder="Cole o link do op.gg (ex.: https://op.gg/lol/summoners/br/Nick-BR1)">
-                    <button class="btn btn-primary" type="submit">➕ Adicionar</button>
-                </form>
-
-                <div class="roster-search">
-                    <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
-                </div>
-
-                <p class="roster-status" id="rosterStatus" role="status"></p>
-
-                <div class="roster" id="rosterList"></div>
             </div>
         </section>
 

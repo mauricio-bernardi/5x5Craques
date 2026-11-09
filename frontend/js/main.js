@@ -20,5 +20,4 @@ for (const id of ['team1', 'team2']) {
 load();
 draw();
 refreshRanking();
-restoreUnlock();
 updateDataDragon();

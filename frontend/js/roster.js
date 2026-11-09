@@ -1,6 +1,6 @@
 // Cadastro de jogadores: nick, link do op.gg e apelidos (nicks antigos ou escritos errado).
-// Todo mundo vê a lista; editar exige desbloquear com a senha do grupo.
-// Os nicks cadastrados viram sugestões nos campos do sorteio.
+// O painel fica escondido atrás do botão "Adicionar jogador", que pede a senha do grupo.
+// Os jogadores cadastrados aparecem no ranking e viram sugestões nos campos do sorteio.
 
 let roster = [];             // [{ id, name, opgg_url, aliases: [{ id, alias }] }], em ordem alfabética
 let nameIndex = new Map();   // nome oficial ou apelido normalizado -> jogador
@@ -168,8 +168,11 @@ async function refreshRoster() {
     renderRoster();
 }
 
+// Mensagens começando com ⚠️ aparecem em destaque vermelho.
 function rosterStatus(text) {
-    $('rosterStatus').textContent = text;
+    const el = $('rosterStatus');
+    el.textContent = text;
+    el.classList.toggle('error', text.startsWith('⚠️'));
 }
 
 // Executa uma função protegida por senha e recarrega tudo (ranking e histórico usam os nomes oficiais).
@@ -186,78 +189,110 @@ async function rosterAction(fn, args, okMsg) {
 }
 
 // Confere se o nome pode ser usado por este jogador (ou por um novo, se player for null).
+// A comparação ignora maiúsculas, acentos e espaços, e também olha os apelidos.
 function nameFree(name, player) {
     const owner = findPlayer(name);
 
     if (owner && owner !== player) {
-        rosterStatus(`⚠️ "${name}" já está cadastrado` +
-            (norm(owner.name) === norm(name) ? '.' : ` (é o jogador ${owner.name}).`));
+        rosterStatus(norm(owner.name) === norm(name) || searchKey(owner.name) === searchKey(name)
+            ? `⚠️ ${owner.name} já está cadastrado.`
+            : `⚠️ "${name}" já está cadastrado como apelido de ${owner.name}.`);
         return false;
     }
 
     return true;
 }
 
-// ---------- Desbloquear / bloquear ----------
+// O mesmo perfil do op.gg não pode estar em dois jogadores.
+function opggFree(url, player) {
+    if (!url) return true;
+
+    const owner = roster.find(p => p.opgg_url && p.opgg_url.toLowerCase() === url.toLowerCase());
+
+    if (owner && owner !== player) {
+        rosterStatus(`⚠️ Esse op.gg já está cadastrado no jogador ${owner.name}.`);
+        return false;
+    }
+
+    return true;
+}
+
+// ---------- Botão "Adicionar jogador" (pede a senha) ----------
 function storedSecret() {
     try { return localStorage.getItem(secretKey); } catch (e) { return null; }
 }
 
-function setUnlocked(on) {
-    rosterUnlocked = on;
-    $('rosterAdd').hidden = !on;
-    $('rosterLock').textContent = on ? '🔒 Bloquear edição' : '🔓 Desbloquear edição';
-    $('rosterInfo').textContent = on
-        ? 'Edição liberada: cole o link do op.gg para cadastrar. Os nicks aparecem como sugestão no sorteio.'
-        : 'Os nicks cadastrados aqui aparecem como sugestão nos campos do sorteio.';
-    renderRoster();
+async function secretIsValid(secret) {
+    try {
+        await api('rpc/verify_secret', { method: 'POST', body: JSON.stringify({ p_secret: secret }) });
+        return true;
+    } catch (err) {
+        if (/senha/i.test(err.message)) return false;
+        throw err;
+    }
 }
 
-$('rosterLock').addEventListener('click', async () => {
-    if (rosterUnlocked) {
-        try { localStorage.removeItem(secretKey); } catch (e) {}
-        setUnlocked(false);
-        rosterStatus('🔒 Edição bloqueada neste navegador.');
+function setPanelOpen(open) {
+    $('rosterPanel').hidden = !open;
+    $('rosterToggle').textContent = open ? '✖ Fechar' : '➕ Adicionar jogador';
+
+    if (open) {
+        renderRoster();
+        $('rosterNew').focus();
+    }
+}
+
+$('rosterToggle').addEventListener('click', async () => {
+    if (!$('rosterPanel').hidden) {
+        setPanelOpen(false);
         return;
     }
 
-    if (!backendOn()) return;
-
-    const secret = prompt('Senha do grupo para liberar a edição:');
-    if (!secret) return;
+    if (!backendOn()) {
+        alert('Configure o Supabase em js/config.js para cadastrar jogadores.');
+        return;
+    }
 
     try {
-        await api('rpc/verify_secret', { method: 'POST', body: JSON.stringify({ p_secret: secret }) });
-        try { localStorage.setItem(secretKey, secret); } catch (e) {}
-        setUnlocked(true);
-        rosterStatus('🔓 Edição liberada.');
-        $('rosterNew').focus();
+        // Quem já digitou a senha neste navegador não precisa digitar de novo.
+        if (!rosterUnlocked) {
+            const saved = storedSecret();
+
+            if (saved && await secretIsValid(saved)) {
+                rosterUnlocked = true;
+            } else {
+                const secret = prompt('Senha do grupo para adicionar jogadores:');
+                if (!secret) return;
+
+                if (!await secretIsValid(secret)) {
+                    alert('Senha errada.');
+                    return;
+                }
+
+                try { localStorage.setItem(secretKey, secret); } catch (e) {}
+                rosterUnlocked = true;
+            }
+        }
+
+        rosterStatus('');
+        setPanelOpen(true);
     } catch (err) {
-        rosterStatus('⚠️ ' + (/senha/i.test(err.message) ? 'Senha errada.' : err.message));
+        alert('Não foi possível verificar a senha: ' + err.message);
     }
 });
 
-// Quem já digitou a senha neste navegador continua liberado (se a senha ainda for válida).
-async function restoreUnlock() {
-    const secret = storedSecret();
-    if (!secret || !backendOn()) return;
+$('rosterLock').addEventListener('click', () => {
+    try { localStorage.removeItem(secretKey); } catch (e) {}
+    rosterUnlocked = false;
+    setPanelOpen(false);
+});
 
-    try {
-        await api('rpc/verify_secret', { method: 'POST', body: JSON.stringify({ p_secret: secret }) });
-        setUnlocked(true);
-    } catch (e) {}
-}
-
-// ---------- Lista ----------
+// ---------- Lista (dentro do painel) ----------
 function renderRoster() {
     const box = $('rosterList');
     box.replaceChildren();
-    box.classList.toggle('locked', !rosterUnlocked);
 
-    if (!backendOn()) {
-        box.append(cell('p', 'Configure o Supabase para cadastrar jogadores.', 'none'));
-        return;
-    }
+    if ($('rosterPanel').hidden) return;
 
     if (!rosterLoaded) return;
 
@@ -408,7 +443,7 @@ function editPlayer(p) {
     const url = input.url || p.opgg_url;
 
     if (input.name === p.name && url === p.opgg_url) return;
-    if (!nameFree(input.name, p)) return;
+    if (!nameFree(input.name, p) || !opggFree(url, p)) return;
 
     const msg = input.name === p.name
         ? `🔗 Link do op.gg de ${p.name} atualizado.`
@@ -449,7 +484,7 @@ $('rosterAdd').addEventListener('submit', async e => {
     e.preventDefault();
 
     const input = readPlayerInput($('rosterNew').value);
-    if (!input || !nameFree(input.name, null)) return;
+    if (!input || !nameFree(input.name, null) || !opggFree(input.url, null)) return;
 
     const where = input.url ? ' com op.gg' : '';
 

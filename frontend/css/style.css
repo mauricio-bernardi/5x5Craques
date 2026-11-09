@@ -809,8 +809,6 @@ table.rank {
 .match-row .side.win { color: var(--ok); font-weight: 600; }
 
 /* ---------- Jogadores e apelidos ---------- */
-.roster-section { margin-top: 32px; }
-
 .roster-add {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -818,7 +816,37 @@ table.rank {
     margin-bottom: 10px;
 }
 
-.roster-search { margin-bottom: 14px; }
+.roster-panel {
+    margin: 0 0 20px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #c8aa6e44;
+    background: linear-gradient(180deg, #c8aa6e0d, transparent);
+}
+
+.roster-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 6px 0 10px;
+}
+
+.roster-tools .history-title { margin: 0; }
+.roster-tools input { width: min(280px, 100%); }
+
+.roster-foot { display: flex; justify-content: flex-end; margin-top: 12px; }
+
+.roster-status.error {
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: #ffb3bb;
+    background: #ff4d5e18;
+    border: 1px solid #ff4d5e55;
+}
+
+.rank .pos.new { color: var(--muted); }
 
 .roster-name a { color: inherit; text-decoration: none; }
 .roster-name a:hover { color: var(--gold-hi); text-decoration: underline; }
@@ -842,8 +870,6 @@ table.rank {
 
 .rank a.player-link { color: inherit; text-decoration: none; }
 .rank a.player-link:hover { color: var(--gold-hi); text-decoration: underline; }
-
-.roster.locked .roster-row { grid-template-columns: minmax(140px, 240px) minmax(0, 1fr); }
 
 .roster-status {
     margin: 0 0 14px;
@@ -951,7 +977,7 @@ input.alias-input {
     .grid, .dnd { grid-template-columns: 1fr; }
     .player-teams { grid-template-columns: 1fr; }
     .vs { text-align: center; }
-    .roster-row, .roster.locked .roster-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .roster-row { grid-template-columns: minmax(0, 1fr) auto; }
     .roster-row .aliases { grid-column: 1 / -1; grid-row: 2; }
 }
 

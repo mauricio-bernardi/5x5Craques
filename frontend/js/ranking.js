@@ -12,13 +12,20 @@ function renderRanking() {
     const body = $('rankBody');
     body.replaceChildren();
 
-    const rows = [...stats.values()].sort((a, b) => b.rating - a.rating || b.games - a.games);
+    const ranked = [...stats.values()].sort((a, b) => b.rating - a.rating || b.games - a.games);
+
+    // Cadastrados que ainda não jogaram entram no fim, sem posição.
+    const newcomers = roster
+        .filter(p => !stats.has(norm(p.name)))
+        .map(p => ({ name: p.name, rating: DEFAULT_RATING, games: 0, wins: 0 }));
+
+    const rows = [...ranked, ...newcomers];
 
     if (!rows.length) {
         const tr = document.createElement('tr');
         tr.className = 'none-row';
 
-        const td = cell('td', 'Nenhuma partida registrada ainda.');
+        const td = cell('td', 'Nenhum jogador ainda. Clique em "Adicionar jogador" ou registre uma partida.');
         td.colSpan = 7;
 
         tr.append(td);
@@ -27,8 +34,12 @@ function renderRanking() {
 
     rows.forEach((p, i) => {
         const tr = document.createElement('tr');
+        const played = p.games > 0;
 
-        if (p.games < MIN_GAMES) {
+        if (!played) {
+            tr.className = 'few';
+            tr.title = 'Ainda não jogou';
+        } else if (p.games < MIN_GAMES) {
             tr.className = 'few';
             tr.title = `Menos de ${MIN_GAMES} jogos: rating ainda pouco confiável`;
         }
@@ -44,13 +55,13 @@ function renderRanking() {
         }
 
         tr.append(
-            cell('td', i + 1, 'pos'),
+            played ? cell('td', i + 1, 'pos') : cell('td', '–', 'pos new'),
             nameCell,
             cell('td', Math.round(p.rating), 'num rating'),
             cell('td', p.games, 'num'),
             cell('td', p.wins, 'num'),
             cell('td', p.games - p.wins, 'num'),
-            cell('td', Math.round(100 * p.wins / p.games) + '%', 'num')
+            cell('td', played ? Math.round(100 * p.wins / p.games) + '%' : '–', 'num')
         );
 
         body.append(tr);
@@ -124,7 +135,7 @@ async function refreshRanking() {
 
         $('rankInfo').textContent =
             `${history.length} partida(s) registrada(s). Todo mundo começa com ${DEFAULT_RATING}; ` +
-            `quem tem menos de ${MIN_GAMES} jogos aparece apagado.`;
+            `quem tem menos de ${MIN_GAMES} jogos aparece apagado e quem ainda não jogou fica no fim.`;
     } catch (err) {
         $('rankInfo').textContent = '⚠️ Não foi possível carregar o ranking: ' + err.message;
     }
