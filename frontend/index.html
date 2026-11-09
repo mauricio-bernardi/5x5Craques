@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Roleta LoL — 2 Times</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <main class="wrap">
+        <header>
+            <h1>Roleta de Campeões dos Craques</h1>
+            <div class="tagline">
+                <span>2 TIMES</span>
+                <span>5 ROTAS</span>
+                <span>3 OPÇÕES POR ROTA</span>
+                <span>30 CAMPEÕES SEM REPETIÇÃO</span>
+            </div>
+        </header>
+
+        <section class="card">
+            <div class="setup">
+                <div class="field blue">
+                    <label for="team1">🔵 Time Azul</label>
+                    <input type="text" id="team1" maxlength="50" value="Time 1">
+                </div>
+
+                <div class="field red">
+                    <label for="team2">🔴 Time Vermelho</label>
+                    <input type="text" id="team2" maxlength="50" value="Time 2">
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary" id="draw">🎲 Sortear campeões</button>
+                    <button class="btn btn-ghost" id="copy" title="Copiar resultado">📋 Copiar</button>
+                </div>
+            </div>
+
+            <div class="status" id="status" role="status"></div>
+        </section>
+
+        <section class="players-section">
+            <h2 class="section-title">Sorteio de jogadores</h2>
+
+            <div class="card">
+                <div class="players-top">
+                    <p>Escreva os 10 jogadores e sorteie, ou balanceie os times pelo rating do ranking.</p>
+                    <div class="actions">
+                        <button class="btn btn-ghost" id="clearPlayers" type="button">Limpar nomes</button>
+                        <button class="btn btn-ghost" id="drawPlayers" type="button">🎰 Sortear aleatório</button>
+                        <button class="btn btn-primary" id="balancePlayers" type="button">⚖️ Balancear por rating</button>
+                    </div>
+                </div>
+
+                <div class="players-grid" id="playerInputs"></div>
+
+                <div class="player-teams" id="playerTeams" hidden>
+                    <div class="pteam blue">
+                        <h3 id="pteamName1">Time 1</h3>
+                        <ol id="pteamList1"></ol>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="pteam red">
+                        <h3 id="pteamName2">Time 2</h3>
+                        <ol id="pteamList2"></ol>
+                    </div>
+
+                    <div class="result-actions">
+                        <span class="sub" id="balanceInfo"></span>
+                        <button class="btn btn-blue" id="win1" type="button">🏆 Time 1 venceu</button>
+                        <button class="btn btn-red" id="win2" type="button">🏆 Time 2 venceu</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="rank-section">
+            <h2 class="section-title">Ranking</h2>
+
+            <div class="card">
+                <div class="players-top">
+                    <p id="rankInfo">Carregando...</p>
+                    <div class="actions">
+                        <button class="btn btn-ghost" id="refreshRank" type="button">🔄 Atualizar</button>
+                    </div>
+                </div>
+
+                <div class="rank-wrap">
+                    <table class="rank">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Jogador</th>
+                                <th class="num">Rating</th>
+                                <th class="num">Jogos</th>
+                                <th class="num">V</th>
+                                <th class="num">D</th>
+                                <th class="num">Winrate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankBody"></tbody>
+                    </table>
+                </div>
+
+                <h3 class="history-title">Últimas partidas</h3>
+                <div class="history" id="history"></div>
+            </div>
+        </section>
+
+        <div class="results-bar">
+            <p>Clique em <b>1 campeão por rota em cada time</b> para marcar os 10 jogados.</p>
+
+            <div class="actions">
+                <span class="progress">
+                    <span class="bar"><i id="progressBar"></i></span>
+                    <span id="progressText">0/10</span>
+                </span>
+                <button class="btn btn-ok" id="markPlayed" type="button">✅ Marcar partida como jogada</button>
+            </div>
+        </div>
+
+        <div class="grid" id="results">
+            <section class="card team blue">
+                <h2>Time 1</h2>
+                <div class="empty">Clique em “Sortear”</div>
+            </section>
+
+            <section class="card team red">
+                <h2>Time 2</h2>
+                <div class="empty">Clique em “Sortear”</div>
+            </section>
+        </div>
+
+        <section class="pool-section">
+            <h2 class="section-title">Campeões bloqueados</h2>
+
+            <div class="pool-head">
+                <p>
+                    <b>Arraste</b> um campeão para <b>Bloqueados</b> para tirá-lo da roleta
+                    (ou dê <b>duplo clique</b>). Arraste de volta para liberar.
+                </p>
+                <div class="lanecounts" id="laneCounts" title="Campeões disponíveis por rota (mínimo 6)"></div>
+            </div>
+
+            <div class="dnd">
+                <div class="box" id="availBox" data-zone="avail">
+                    <div class="box-head">
+                        <h3>Disponíveis <span class="count" id="availCount">0</span></h3>
+                    </div>
+
+                    <div class="search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                        <input type="search" id="searchAvail" placeholder="Pesquisar campeão...">
+                    </div>
+
+                    <div class="seg" id="laneFilter">
+                        <button type="button" data-lane="" class="active">Todas</button>
+                        <button type="button" data-lane="TOP">TOP</button>
+                        <button type="button" data-lane="JG">JG</button>
+                        <button type="button" data-lane="MID">MID</button>
+                        <button type="button" data-lane="ADC">ADC</button>
+                        <button type="button" data-lane="SUP">SUP</button>
+                    </div>
+
+                    <div class="list" id="availList"></div>
+                </div>
+
+                <div class="box blocked" id="blockBox" data-zone="block">
+                    <div class="box-head">
+                        <h3>Bloqueados <span class="count" id="blockCount">0</span></h3>
+                        <button id="clearPlayed" type="button" class="btn btn-danger">Limpar tudo</button>
+                    </div>
+
+                    <div class="search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                        <input type="search" id="searchBlock" placeholder="Pesquisar bloqueado...">
+                    </div>
+
+                    <div class="list" id="blockList" style="height: 404px"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/champions.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/pool.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/rating.js"></script>
+    <script src="js/players.js"></script>
+    <script src="js/ranking.js"></script>
+    <script src="js/draft.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
