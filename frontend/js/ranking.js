@@ -97,14 +97,19 @@ async function refreshRanking() {
     if (!backendOn()) {
         $('rankInfo').textContent = '⚠️ Backend não configurado: preencha SUPABASE_URL e SUPABASE_KEY no código da página.';
         renderRanking();
+        await refreshRoster();
         updateResultButtons();
         return;
     }
 
     $('rankInfo').textContent = 'Carregando...';
 
+    // A lista de jogadores carrega junto, mas um erro nela não impede o ranking.
+    const rosterDone = refreshRoster();
+
     try {
         history = await fetchMatches();
+        await rosterDone;
         stats = computeStats(history);
 
         $('rankInfo').textContent =
@@ -115,6 +120,7 @@ async function refreshRanking() {
     }
 
     renderRanking();
+    renderRoster(); // de novo, agora com o rating atualizado de cada jogador
 
     if (playerTeams && !spinning) {
         fillPlayerLists(playerTeams);

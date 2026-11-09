@@ -808,6 +808,110 @@ table.rank {
 .match-row .side { color: var(--muted); }
 .match-row .side.win { color: var(--ok); font-weight: 600; }
 
+/* ---------- Jogadores e apelidos ---------- */
+.roster-section { margin-top: 32px; }
+
+.roster-add {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.roster-status {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--gold-hi);
+}
+
+.roster-status:empty { display: none; }
+
+.roster { display: grid; gap: 8px; }
+
+.roster-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+}
+
+.roster-name { min-width: 0; }
+
+.roster-name b {
+    display: block;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.roster-name small {
+    color: var(--muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.aliases {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+}
+
+.alias {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 100%;
+    padding: 3px 3px 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #3b9cff14;
+    color: #9ccbff;
+    border: 1px solid #3b9cff33;
+}
+
+.alias span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.alias button {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    line-height: 1;
+    opacity: .7;
+}
+
+.alias button:hover { opacity: 1; background: #ff4d5e33; color: #ffb3bb; }
+
+input.alias-input {
+    width: 140px;
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 999px;
+}
+
+.roster-actions { display: flex; gap: 6px; }
+
+.btn-sm { padding: 6px 10px; font-size: 12px; }
+
+.roster .none {
+    color: var(--muted);
+    text-align: center;
+    padding: 24px 0;
+    font-size: 14px;
+}
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 900px) {
     .setup { grid-template-columns: 1fr 1fr; }
@@ -820,6 +924,10 @@ table.rank {
     .grid, .dnd { grid-template-columns: 1fr; }
     .player-teams { grid-template-columns: 1fr; }
     .vs { text-align: center; }
+    .roster-add { grid-template-columns: minmax(0, 1fr) auto; }
+    .roster-add input[type=search] { grid-column: 1 / -1; }
+    .roster-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .roster-row .aliases { grid-column: 1 / -1; grid-row: 2; }
 }
 
 @media (max-width: 480px) {

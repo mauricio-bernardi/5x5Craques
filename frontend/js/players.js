@@ -18,7 +18,19 @@ for (let i = 0; i < 10; i++) {
     input.id = 'player' + i;
     input.maxLength = 30;
     input.placeholder = 'Jogador ' + (i + 1);
+    input.autocomplete = 'off';
+    input.setAttribute('list', 'playerSuggestions');
     input.addEventListener('input', save);
+
+    // Ao sair do campo, um apelido conhecido vira o nome oficial.
+    input.addEventListener('change', () => {
+        const official = canonicalName(input.value);
+
+        if (input.value.trim() && official !== input.value) {
+            input.value = official;
+            save();
+        }
+    });
     input.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
             const next = $('player' + (i + 1));
@@ -114,16 +126,32 @@ function readPlayers() {
         return null;
     }
 
-    const seen = new Set();
-    for (const n of filled) {
-        if (seen.has(norm(n))) {
-            $('status').textContent = `⚠️ O nome "${n}" está repetido.`;
-            return null;
-        }
-        seen.add(norm(n));
+    // Troca apelidos pelo nome oficial (também nos campos, para ficar visível).
+    const official = filled.map(canonicalName);
+
+    for (let i = 0; i < 10; i++) {
+        const input = $('player' + i);
+        if (input.value.trim()) input.value = canonicalName(input.value);
     }
 
-    return filled;
+    save();
+
+    const seen = new Map();
+    for (let i = 0; i < official.length; i++) {
+        const k = norm(official[i]);
+
+        if (seen.has(k)) {
+            const first = filled[seen.get(k)];
+            $('status').textContent = norm(first) === norm(filled[i])
+                ? `⚠️ O nome "${filled[i]}" está repetido.`
+                : `⚠️ "${first}" e "${filled[i]}" são o mesmo jogador (${official[i]}).`;
+            return null;
+        }
+
+        seen.set(k, i);
+    }
+
+    return official;
 }
 
 $('drawPlayers').addEventListener('click', () => {
@@ -189,7 +217,15 @@ async function registerResult(winner) {
 
     const name = teamTitle(winner - 1);
 
-    if (!confirm(`Registrar vitória de "${name}"?\n\n🔵 ${playerTeams[0].join(', ')}\n🔴 ${playerTeams[1].join(', ')}`)) {
+    // Nomes que o banco não conhece viram jogadores novos: avisa para pegar nick escrito errado.
+    const unknown = rosterLoaded ? playerTeams.flat().filter(n => !findPlayer(n)) : [];
+
+    const warning = unknown.length
+        ? `\n\n⚠️ Jogador(es) novo(s), serão cadastrados: ${unknown.join(', ')}\n` +
+          'Se for nick escrito errado, cancele e cadastre como apelido na seção Jogadores.'
+        : '';
+
+    if (!confirm(`Registrar vitória de "${name}"?\n\n🔵 ${playerTeams[0].join(', ')}\n🔴 ${playerTeams[1].join(', ')}${warning}`)) {
         return;
     }
 

@@ -44,8 +44,9 @@ function computeStats(matches) {
     return map;
 }
 
+// Aceita nome oficial ou apelido.
 function playerStat(name) {
-    return stats.get(norm(name)) || null;
+    return stats.get(norm(canonicalName(name))) || null;
 }
 
 function ratingOf(name) {

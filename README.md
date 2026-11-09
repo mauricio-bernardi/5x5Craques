@@ -18,6 +18,7 @@ Roleta de campeões de LoL para 2 times, com sorteio/balanceamento de jogadores 
         ├── storage.js    # save/load no localStorage
         ├── pool.js       # campeões bloqueados (arrastar e soltar)
         ├── api.js        # chamadas ao Supabase
+        ├── roster.js     # cadastro de jogadores e apelidos (nicks)
         ├── rating.js     # Elo e balanceamento dos times
         ├── players.js    # sorteio de jogadores e registro de resultado
         ├── ranking.js    # tabela de ranking e histórico
@@ -32,9 +33,22 @@ tags `<script>` no `index.html` importa**: `config.js` e `utils.js` primeiro, `m
 ## Configuração
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Em `backend/schema.sql`, troque `TROQUE_ESTA_SENHA` pela senha do grupo.
-3. No Supabase: **SQL Editor → New query**, cole o `schema.sql` e rode.
+2. No Supabase: **SQL Editor → New query**, cole o `schema.sql`, troque `TROQUE_ESTA_SENHA`
+   pela senha do grupo **no editor** (não no arquivo, que é público) e rode.
+3. Quando o `schema.sql` mudar, cole e rode de novo: nada é apagado e a senha existente é mantida.
 4. Em **Project Settings → API**, copie a Project URL e a chave anon/publishable para
    `frontend/js/config.js`.
 5. Abra `frontend/index.html`. Para os outros acessarem, mande a pasta `frontend` ou hospede
    (Netlify Drop, GitHub Pages).
+
+## Jogadores e apelidos
+
+Na seção **Jogadores** cada pessoa tem um nome oficial e quantos apelidos quiser (nicks escritos
+errado, nicks antigos). No sorteio, qualquer apelido é trocado pelo nome oficial, então tudo conta
+para o mesmo ranking.
+
+- **✏️ Renomear**: troca o nome oficial; o antigo vira apelido automaticamente.
+- **🔗 Juntar**: a mesma pessoa foi cadastrada duas vezes; as partidas passam para um só e o outro nome vira apelido.
+- **🗑️ Excluir**: só para quem ainda não jogou.
+
+Ao registrar uma partida, o site avisa quais nomes são desconhecidos e vão virar jogadores novos.

@@ -112,6 +112,31 @@
             </div>
         </section>
 
+        <section class="roster-section">
+            <h2 class="section-title">Jogadores</h2>
+
+            <div class="card">
+                <div class="players-top">
+                    <p>
+                        Cadastre cada jogador uma vez e adicione os <b>apelidos</b> (nicks escritos errado, nicks antigos).
+                        No sorteio, qualquer apelido vira o nome oficial e conta para o mesmo ranking.
+                    </p>
+                </div>
+
+                <form class="roster-add" id="rosterAdd">
+                    <input type="text" id="rosterNew" maxlength="30" placeholder="Nome do novo jogador" autocomplete="off">
+                    <button class="btn btn-primary" type="submit">➕ Adicionar</button>
+                    <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
+                </form>
+
+                <p class="roster-status" id="rosterStatus" role="status"></p>
+
+                <div class="roster" id="rosterList"></div>
+            </div>
+        </section>
+
+        <datalist id="playerSuggestions"></datalist>
+
         <div class="results-bar">
             <p>Clique em <b>1 campeão por rota em cada time</b> para marcar os 10 jogados.</p>
 
@@ -193,6 +218,7 @@
     <script src="js/storage.js"></script>
     <script src="js/pool.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/roster.js"></script>
     <script src="js/rating.js"></script>
     <script src="js/players.js"></script>
     <script src="js/ranking.js"></script>
