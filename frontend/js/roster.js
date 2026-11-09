@@ -1,13 +1,22 @@
-// Cadastro de jogadores e apelidos (nicks escritos errado, nicks antigos).
-// Qualquer apelido digitado no sorteio é trocado pelo nome oficial do jogador.
+// Cadastro de jogadores: nick, link do op.gg e apelidos (nicks antigos ou escritos errado).
+// Todo mundo vê a lista; editar exige desbloquear com a senha do grupo.
+// Os nicks cadastrados viram sugestões nos campos do sorteio.
 
-let roster = [];            // [{ id, name, aliases: [{ id, alias }] }], em ordem alfabética
-let nameIndex = new Map();  // nome oficial ou apelido normalizado -> jogador
+let roster = [];             // [{ id, name, opgg_url, aliases: [{ id, alias }] }], em ordem alfabética
+let nameIndex = new Map();   // nome oficial ou apelido normalizado -> jogador
+let looseIndex = new Map();  // mesmo, ignorando acentos/espaços/símbolos -> jogador (null se ambíguo)
 let rosterLoaded = false;
+let rosterUnlocked = false;
 
-// Jogador dono deste nome ou apelido (ou null se ninguém tiver esse nome).
+// ---------- Busca de jogadores ----------
+// Acha o jogador pelo nome oficial ou apelido. Se não achar exato, tenta ignorando
+// maiúsculas, acentos, espaços e símbolos ("joao silva" acha "João Silva").
 function findPlayer(name) {
-    return nameIndex.get(norm(name)) || null;
+    const exact = nameIndex.get(norm(name));
+    if (exact) return exact;
+
+    const k = searchKey(name);
+    return (k && looseIndex.get(k)) || null;
 }
 
 // Nome oficial correspondente; nomes desconhecidos voltam como foram digitados.
@@ -16,13 +25,111 @@ function canonicalName(name) {
     return p ? p.name : name.trim();
 }
 
+function buildIndexes() {
+    nameIndex = new Map();
+    looseIndex = new Map();
+
+    const addLoose = (text, p) => {
+        const k = searchKey(text);
+        if (!k) return;
+        // Dois jogadores diferentes com a mesma chave: não dá para adivinhar, então nenhum.
+        looseIndex.set(k, looseIndex.has(k) && looseIndex.get(k) !== p ? null : p);
+    };
+
+    for (const p of roster) {
+        nameIndex.set(norm(p.name), p);
+        addLoose(p.name, p);
+
+        for (const a of p.aliases) {
+            nameIndex.set(norm(a.alias), p);
+            addLoose(a.alias, p);
+        }
+    }
+}
+
+// ---------- Link do op.gg ----------
+// Aceita os formatos do op.gg:
+//   https://op.gg/lol/summoners/br/Nick-BR1   (atual, com ou sem idioma: /pt/lol/...)
+//   https://www.op.gg/summoners/br/Nick-BR1
+//   https://br.op.gg/summoner/userName=Nick   (antigo, sem tag)
+// Devolve { name, url } com o link sempre no formato https://op.gg/lol/summoners/...
+function parseOpgg(text) {
+    const raw = text.trim();
+    let u;
+
+    try {
+        u = new URL(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+    } catch (e) {
+        return null;
+    }
+
+    if (!/(^|\.)op\.gg$/i.test(u.hostname)) return null;
+
+    const decode = s => { try { return decodeURIComponent(s); } catch (e) { return s; } };
+    const parts = u.pathname.split('/').filter(Boolean).map(decode);
+    const i = parts.findIndex(p => /^summoners?$/i.test(p));
+
+    if (i < 0) return null;
+
+    let region;
+    let riotId;
+    const old = (parts[i + 1] || '').match(/^userName=(.+)$/i) || [];
+
+    if (old[1] || u.searchParams.get('userName')) {
+        riotId = old[1] || u.searchParams.get('userName');
+        region = u.hostname.split('.').length > 2 ? u.hostname.split('.')[0] : 'br';
+        if (region === 'www') region = 'br';
+    } else if (parts[i + 2]) {
+        region = parts[i + 1];
+        riotId = parts[i + 2];
+    } else {
+        return null;
+    }
+
+    // Riot ID no link: "Nome-TAG". O nome pode ter espaços; a tag vem depois do último hífen.
+    const dash = riotId.lastIndexOf('-');
+    const name = (dash > 0 ? riotId.slice(0, dash) : riotId).trim();
+    const tag = dash > 0 ? riotId.slice(dash + 1).trim() : '';
+
+    if (!name || name.length > 30 || !/^[a-z0-9_]{2,8}$/i.test(region)) return null;
+
+    const url = `https://op.gg/lol/summoners/${region.toLowerCase()}/` +
+        encodeURIComponent(name) + (tag ? '-' + encodeURIComponent(tag) : '');
+
+    return { name, url };
+}
+
+// Texto digitado no cadastro/edição: link do op.gg ou só o nick.
+function readPlayerInput(text) {
+    const raw = text.trim();
+    if (!raw) return null;
+
+    if (/op\.gg/i.test(raw)) {
+        const parsed = parseOpgg(raw);
+
+        if (!parsed) {
+            rosterStatus('⚠️ Não reconheci esse link. Use o endereço do perfil, ex.: https://op.gg/lol/summoners/br/Nick-BR1');
+        }
+
+        return parsed;
+    }
+
+    if (raw.length > 30 || /[/\\]/.test(raw)) {
+        rosterStatus('⚠️ Cole o link do op.gg ou digite só o nick (até 30 caracteres).');
+        return null;
+    }
+
+    return { name: raw, url: null };
+}
+
+// ---------- Dados ----------
 async function fetchRoster() {
     const [players, aliases] = await Promise.all([
-        api('players?select=id,name&order=name.asc&limit=1000'),
+        api('players?select=id,name,opgg_url&order=name.asc&limit=1000'),
         api('player_aliases?select=id,player_id,alias&order=alias.asc&limit=5000')
     ]);
 
-    const byId = new Map(players.map(p => [p.id, { id: p.id, name: p.name, aliases: [] }]));
+    const byId = new Map(players.map(p => [p.id, { ...p, aliases: [] }]));
 
     for (const a of aliases) {
         const p = byId.get(a.player_id);
@@ -49,16 +156,10 @@ async function refreshRoster() {
             ' (rode o schema.sql atualizado no Supabase).');
     }
 
-    nameIndex = new Map();
-
-    for (const p of roster) {
-        nameIndex.set(norm(p.name), p);
-        for (const a of p.aliases) nameIndex.set(norm(a.alias), p);
-    }
+    buildIndexes();
 
     // Sugestões ao digitar nos campos do sorteio.
-    const list = $('playerSuggestions');
-    list.replaceChildren(...roster.map(p => {
+    $('playerSuggestions').replaceChildren(...roster.map(p => {
         const opt = document.createElement('option');
         opt.value = p.name;
         return opt;
@@ -89,16 +190,69 @@ function nameFree(name, player) {
     const owner = findPlayer(name);
 
     if (owner && owner !== player) {
-        rosterStatus(`⚠️ "${name}" já é ${norm(owner.name) === norm(name) ? 'um jogador' : 'apelido de ' + owner.name}.`);
+        rosterStatus(`⚠️ "${name}" já está cadastrado` +
+            (norm(owner.name) === norm(name) ? '.' : ` (é o jogador ${owner.name}).`));
         return false;
     }
 
     return true;
 }
 
+// ---------- Desbloquear / bloquear ----------
+function storedSecret() {
+    try { return localStorage.getItem(secretKey); } catch (e) { return null; }
+}
+
+function setUnlocked(on) {
+    rosterUnlocked = on;
+    $('rosterAdd').hidden = !on;
+    $('rosterLock').textContent = on ? '🔒 Bloquear edição' : '🔓 Desbloquear edição';
+    $('rosterInfo').textContent = on
+        ? 'Edição liberada: cole o link do op.gg para cadastrar. Os nicks aparecem como sugestão no sorteio.'
+        : 'Os nicks cadastrados aqui aparecem como sugestão nos campos do sorteio.';
+    renderRoster();
+}
+
+$('rosterLock').addEventListener('click', async () => {
+    if (rosterUnlocked) {
+        try { localStorage.removeItem(secretKey); } catch (e) {}
+        setUnlocked(false);
+        rosterStatus('🔒 Edição bloqueada neste navegador.');
+        return;
+    }
+
+    if (!backendOn()) return;
+
+    const secret = prompt('Senha do grupo para liberar a edição:');
+    if (!secret) return;
+
+    try {
+        await api('rpc/verify_secret', { method: 'POST', body: JSON.stringify({ p_secret: secret }) });
+        try { localStorage.setItem(secretKey, secret); } catch (e) {}
+        setUnlocked(true);
+        rosterStatus('🔓 Edição liberada.');
+        $('rosterNew').focus();
+    } catch (err) {
+        rosterStatus('⚠️ ' + (/senha/i.test(err.message) ? 'Senha errada.' : err.message));
+    }
+});
+
+// Quem já digitou a senha neste navegador continua liberado (se a senha ainda for válida).
+async function restoreUnlock() {
+    const secret = storedSecret();
+    if (!secret || !backendOn()) return;
+
+    try {
+        await api('rpc/verify_secret', { method: 'POST', body: JSON.stringify({ p_secret: secret }) });
+        setUnlocked(true);
+    } catch (e) {}
+}
+
+// ---------- Lista ----------
 function renderRoster() {
     const box = $('rosterList');
     box.replaceChildren();
+    box.classList.toggle('locked', !rosterUnlocked);
 
     if (!backendOn()) {
         box.append(cell('p', 'Configure o Supabase para cadastrar jogadores.', 'none'));
@@ -116,52 +270,79 @@ function renderRoster() {
     if (!shown.length) {
         box.append(cell('p', roster.length
             ? 'Nenhum jogador encontrado.'
-            : 'Nenhum jogador ainda. Adicione acima ou registre uma partida.', 'none'));
+            : 'Nenhum jogador cadastrado ainda.' + (rosterUnlocked ? ' Cole um link do op.gg acima.' : ''), 'none'));
         return;
     }
 
     for (const p of shown) box.append(rosterRow(p));
 }
 
+function opggLink(url, text, className) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = text;
+    if (className) a.className = className;
+    return a;
+}
+
 function rosterRow(p) {
     const row = document.createElement('div');
     row.className = 'roster-row';
 
-    // Nome e resumo do ranking.
+    // Nick, link do op.gg e resumo do ranking.
     const s = playerStat(p.name);
     const info = document.createElement('div');
     info.className = 'roster-name';
-    info.append(
-        cell('b', p.name),
-        cell('small', s ? `${Math.round(s.rating)} · ${s.games} jogo${s.games === 1 ? '' : 's'}` : 'sem jogos')
-    );
-    info.title = p.name;
 
-    // Apelidos.
+    const title = document.createElement('b');
+    title.title = p.name;
+
+    if (p.opgg_url) {
+        title.append(opggLink(p.opgg_url, p.name), opggLink(p.opgg_url, 'OP.GG', 'opgg'));
+    } else {
+        title.textContent = p.name;
+    }
+
+    const summary = s ? `${Math.round(s.rating)} · ${s.games} jogo${s.games === 1 ? '' : 's'}` : 'sem jogos';
+    info.append(title, cell('small', summary + (p.opgg_url || !rosterUnlocked ? '' : ' · sem op.gg')));
+
+    // Apelidos (só dá para mexer com a edição liberada).
     const aliases = document.createElement('div');
     aliases.className = 'aliases';
 
     for (const a of p.aliases) {
         const chip = document.createElement('span');
         chip.className = 'alias';
+        chip.title = 'Apelido: também é reconhecido no sorteio';
+        chip.append(cell('span', a.alias));
 
-        const del = cell('button', '×');
-        del.type = 'button';
-        del.title = `Remover o apelido "${a.alias}"`;
-        del.addEventListener('click', () => {
-            rosterAction('remove_alias', { p_alias_id: a.id }, `🗑️ Apelido "${a.alias}" removido de ${p.name}.`);
-        });
+        if (rosterUnlocked) {
+            const del = cell('button', '×');
+            del.type = 'button';
+            del.title = `Remover o apelido "${a.alias}"`;
+            del.addEventListener('click', () => {
+                rosterAction('remove_alias', { p_alias_id: a.id }, `🗑️ Apelido "${a.alias}" removido de ${p.name}.`);
+            });
+            chip.append(del);
+        } else {
+            chip.style.paddingRight = '10px';
+        }
 
-        chip.append(cell('span', a.alias), del);
         aliases.append(chip);
     }
+
+    row.append(info, aliases);
+
+    if (!rosterUnlocked) return row;
 
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'alias-input';
     input.maxLength = 30;
     input.placeholder = '+ apelido';
-    input.title = 'Digite um apelido e aperte Enter';
+    input.title = 'Outro nome pelo qual este jogador é chamado. Digite e aperte Enter.';
     input.addEventListener('keydown', async e => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
@@ -182,17 +363,17 @@ function rosterRow(p) {
     const actions = document.createElement('div');
     actions.className = 'roster-actions';
 
-    const rename = cell('button', '✏️', 'btn btn-ghost btn-sm');
-    rename.type = 'button';
-    rename.title = 'Renomear (o nome atual vira apelido)';
-    rename.addEventListener('click', () => renamePlayer(p));
+    const edit = cell('button', '✏️', 'btn btn-ghost btn-sm');
+    edit.type = 'button';
+    edit.title = 'Trocar o link do op.gg ou o nick (o nick antigo vira apelido)';
+    edit.addEventListener('click', () => editPlayer(p));
 
-    const merge = cell('button', '🔗', 'btn btn-ghost btn-sm');
+    const merge = cell('button', '🔀', 'btn btn-ghost btn-sm');
     merge.type = 'button';
     merge.title = 'Juntar com outro jogador (mesma pessoa cadastrada duas vezes)';
     merge.addEventListener('click', () => mergePlayer(p));
 
-    actions.append(rename, merge);
+    actions.append(edit, merge);
 
     if (!s) {
         const del = cell('button', '🗑️', 'btn btn-danger btn-sm');
@@ -206,23 +387,40 @@ function rosterRow(p) {
         actions.append(del);
     }
 
-    row.append(info, aliases, actions);
+    row.append(actions);
 
     return row;
 }
 
-function renamePlayer(p) {
-    const name = (prompt(`Novo nome oficial para "${p.name}":\n("${p.name}" continua valendo como apelido.)`, p.name) || '').trim();
+// ---------- Ações ----------
+function editPlayer(p) {
+    const text = prompt(
+        `Novo link do op.gg de "${p.name}" (ou só um novo nick).\n` +
+        `Se o nick mudar, "${p.name}" continua valendo como apelido.`,
+        p.opgg_url || p.name
+    );
 
-    if (!name || name === p.name || !nameFree(name, p)) return;
+    if (text === null) return;
 
-    rosterAction('rename_player', { p_player_id: p.id, p_new_name: name }, `✏️ ${p.name} agora se chama ${name}.`);
+    const input = readPlayerInput(text);
+    if (!input) return;
+
+    const url = input.url || p.opgg_url;
+
+    if (input.name === p.name && url === p.opgg_url) return;
+    if (!nameFree(input.name, p)) return;
+
+    const msg = input.name === p.name
+        ? `🔗 Link do op.gg de ${p.name} atualizado.`
+        : `✏️ ${p.name} agora é ${input.name}.`;
+
+    rosterAction('update_player', { p_player_id: p.id, p_new_name: input.name, p_opgg_url: url }, msg);
 }
 
 function mergePlayer(p) {
     const answer = (prompt(
         `"${p.name}" é a mesma pessoa que qual jogador?\n` +
-        `Digite o nome (ou apelido) de quem vai continuar. As partidas de "${p.name}" passam para ele ` +
+        `Digite o nick de quem vai continuar. As partidas de "${p.name}" passam para ele ` +
         `e "${p.name}" vira apelido.`
     ) || '').trim();
 
@@ -244,17 +442,20 @@ function mergePlayer(p) {
         return;
     }
 
-    rosterAction('merge_players', { p_from: p.id, p_into: target.id }, `🔗 ${p.name} foi juntado em ${target.name}.`);
+    rosterAction('merge_players', { p_from: p.id, p_into: target.id }, `🔀 ${p.name} foi juntado em ${target.name}.`);
 }
 
 $('rosterAdd').addEventListener('submit', async e => {
     e.preventDefault();
 
-    const name = $('rosterNew').value.trim();
-    if (!name || !nameFree(name, null)) return;
+    const input = readPlayerInput($('rosterNew').value);
+    if (!input || !nameFree(input.name, null)) return;
 
-    if (await rosterAction('add_player', { p_name: name }, `✅ ${name} cadastrado.`)) {
+    const where = input.url ? ' com op.gg' : '';
+
+    if (await rosterAction('add_player', { p_name: input.name, p_opgg_url: input.url }, `✅ ${input.name} cadastrado${where}.`)) {
         $('rosterNew').value = '';
+        $('rosterNew').focus();
     }
 });
 

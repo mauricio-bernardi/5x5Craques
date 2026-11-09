@@ -117,17 +117,23 @@
 
             <div class="card">
                 <div class="players-top">
-                    <p>
-                        Cadastre cada jogador uma vez e adicione os <b>apelidos</b> (nicks escritos errado, nicks antigos).
-                        No sorteio, qualquer apelido vira o nome oficial e conta para o mesmo ranking.
+                    <p id="rosterInfo">
+                        Os nicks cadastrados aqui aparecem como sugestão nos campos do sorteio.
                     </p>
+                    <div class="actions">
+                        <button class="btn btn-ghost" id="rosterLock" type="button">🔓 Desbloquear edição</button>
+                    </div>
                 </div>
 
-                <form class="roster-add" id="rosterAdd">
-                    <input type="text" id="rosterNew" maxlength="30" placeholder="Nome do novo jogador" autocomplete="off">
+                <form class="roster-add" id="rosterAdd" hidden>
+                    <input type="text" id="rosterNew" maxlength="200" autocomplete="off"
+                           placeholder="Cole o link do op.gg (ex.: https://op.gg/lol/summoners/br/Nick-BR1)">
                     <button class="btn btn-primary" type="submit">➕ Adicionar</button>
-                    <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
                 </form>
+
+                <div class="roster-search">
+                    <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
+                </div>
 
                 <p class="roster-status" id="rosterStatus" role="status"></p>
 

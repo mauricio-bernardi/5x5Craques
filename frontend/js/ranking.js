@@ -33,9 +33,19 @@ function renderRanking() {
             tr.title = `Menos de ${MIN_GAMES} jogos: rating ainda pouco confiável`;
         }
 
+        // Nome vira link para o op.gg, se o jogador tiver um cadastrado.
+        const who = findPlayer(p.name);
+        const nameCell = document.createElement('td');
+
+        if (who && who.opgg_url) {
+            nameCell.append(opggLink(who.opgg_url, p.name, 'player-link'));
+        } else {
+            nameCell.textContent = p.name;
+        }
+
         tr.append(
             cell('td', i + 1, 'pos'),
-            cell('td', p.name),
+            nameCell,
             cell('td', Math.round(p.rating), 'num rating'),
             cell('td', p.games, 'num'),
             cell('td', p.wins, 'num'),

@@ -16,6 +16,12 @@ create table if not exists players (
     created_at timestamptz not null default now()
 );
 
+-- Link do perfil no op.gg (o site sempre grava no formato https://op.gg/...).
+alter table players add column if not exists opgg_url text;
+alter table players drop constraint if exists players_opgg_url_check;
+alter table players add constraint players_opgg_url_check
+    check (opgg_url is null or (opgg_url ~ '^https://op\.gg/' and length(opgg_url) <= 200));
+
 -- Outros nicks do mesmo jogador (erros de digitação, nicks antigos).
 -- Um nome nunca pode ser ao mesmo tempo nome oficial e apelido: as funções garantem isso.
 create table if not exists player_aliases (
@@ -177,8 +183,25 @@ begin
 end;
 $$;
 
--- Cadastra um jogador antes de ele jogar.
-create or replace function add_player(p_secret text, p_name text)
+-- Versões antigas destas funções (substituídas por add_player com op.gg e update_player).
+drop function if exists add_player(text, text);
+drop function if exists rename_player(text, bigint, text);
+
+-- Usado pelo botão "Desbloquear": só confere a senha.
+create or replace function verify_secret(p_secret text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    perform check_secret(p_secret);
+    return true;
+end;
+$$;
+
+-- Cadastra um jogador (normalmente a partir do link do op.gg).
+create or replace function add_player(p_secret text, p_name text, p_opgg_url text default null)
 returns bigint
 language plpgsql
 security definer
@@ -193,7 +216,8 @@ begin
         raise exception 'o nome "%" já está em uso', trim(p_name);
     end if;
 
-    insert into players (name) values (trim(p_name)) returning id into v_id;
+    insert into players (name, opgg_url) values (trim(p_name), nullif(trim(p_opgg_url), ''))
+    returning id into v_id;
 
     return v_id;
 end;
@@ -237,8 +261,9 @@ begin
 end;
 $$;
 
--- Troca o nome oficial. O nome antigo vira apelido, então continua sendo reconhecido.
-create or replace function rename_player(p_secret text, p_player_id bigint, p_new_name text)
+-- Troca o nome oficial e o link do op.gg. Se o nome mudar, o antigo vira apelido,
+-- então continua sendo reconhecido.
+create or replace function update_player(p_secret text, p_player_id bigint, p_new_name text, p_opgg_url text)
 returns void
 language plpgsql
 security definer
@@ -265,7 +290,9 @@ begin
     -- Se o novo nome era apelido deste jogador, ele deixa de ser apelido.
     delete from player_aliases where alias_key = lower(trim(p_new_name));
 
-    update players set name = trim(p_new_name) where id = p_player_id;
+    update players
+    set name = trim(p_new_name), opgg_url = nullif(trim(p_opgg_url), '')
+    where id = p_player_id;
 
     -- Só maiúsculas/minúsculas mudaram: não precisa guardar o antigo.
     if lower(trim(v_old)) <> lower(trim(p_new_name)) then
@@ -339,19 +366,21 @@ $$;
 
 revoke execute on function register_match(text, text[], text[], int) from public;
 revoke execute on function delete_match(text, bigint) from public;
-revoke execute on function add_player(text, text) from public;
+revoke execute on function verify_secret(text) from public;
+revoke execute on function add_player(text, text, text) from public;
 revoke execute on function add_alias(text, bigint, text) from public;
 revoke execute on function remove_alias(text, bigint) from public;
-revoke execute on function rename_player(text, bigint, text) from public;
+revoke execute on function update_player(text, bigint, text, text) from public;
 revoke execute on function merge_players(text, bigint, bigint) from public;
 revoke execute on function delete_player(text, bigint) from public;
 
 grant execute on function register_match(text, text[], text[], int) to anon, authenticated;
 grant execute on function delete_match(text, bigint) to anon, authenticated;
-grant execute on function add_player(text, text) to anon, authenticated;
+grant execute on function verify_secret(text) to anon, authenticated;
+grant execute on function add_player(text, text, text) to anon, authenticated;
 grant execute on function add_alias(text, bigint, text) to anon, authenticated;
 grant execute on function remove_alias(text, bigint) to anon, authenticated;
-grant execute on function rename_player(text, bigint, text) to anon, authenticated;
+grant execute on function update_player(text, bigint, text, text) to anon, authenticated;
 grant execute on function merge_players(text, bigint, bigint) to anon, authenticated;
 grant execute on function delete_player(text, bigint) to anon, authenticated;
 

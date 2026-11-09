@@ -813,10 +813,37 @@ table.rank {
 
 .roster-add {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
+
+.roster-search { margin-bottom: 14px; }
+
+.roster-name a { color: inherit; text-decoration: none; }
+.roster-name a:hover { color: var(--gold-hi); text-decoration: underline; }
+
+.opgg {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    color: #9ccbff;
+    background: #3b9cff18;
+    border: 1px solid #3b9cff33;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.opgg:hover { background: #3b9cff30; }
+
+.rank a.player-link { color: inherit; text-decoration: none; }
+.rank a.player-link:hover { color: var(--gold-hi); text-decoration: underline; }
+
+.roster.locked .roster-row { grid-template-columns: minmax(140px, 240px) minmax(0, 1fr); }
 
 .roster-status {
     margin: 0 0 14px;
@@ -924,9 +951,7 @@ input.alias-input {
     .grid, .dnd { grid-template-columns: 1fr; }
     .player-teams { grid-template-columns: 1fr; }
     .vs { text-align: center; }
-    .roster-add { grid-template-columns: minmax(0, 1fr) auto; }
-    .roster-add input[type=search] { grid-column: 1 / -1; }
-    .roster-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .roster-row, .roster.locked .roster-row { grid-template-columns: minmax(0, 1fr) auto; }
     .roster-row .aliases { grid-column: 1 / -1; grid-row: 2; }
 }
 

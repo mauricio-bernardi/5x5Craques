@@ -43,12 +43,19 @@ tags `<script>` no `index.html` importa**: `config.js` e `utils.js` primeiro, `m
 
 ## Jogadores e apelidos
 
-Na seção **Jogadores** cada pessoa tem um nome oficial e quantos apelidos quiser (nicks escritos
-errado, nicks antigos). No sorteio, qualquer apelido é trocado pelo nome oficial, então tudo conta
-para o mesmo ranking.
+A seção **Jogadores** é visível para todos, mas só dá para editar depois de clicar em
+**🔓 Desbloquear edição** e digitar a senha do grupo (fica lembrada naquele navegador até clicar em
+**🔒 Bloquear**).
 
-- **✏️ Renomear**: troca o nome oficial; o antigo vira apelido automaticamente.
-- **🔗 Juntar**: a mesma pessoa foi cadastrada duas vezes; as partidas passam para um só e o outro nome vira apelido.
+- **Cadastrar**: cole o link do perfil no op.gg (ex.: `https://op.gg/lol/summoners/br/Nick-BR1`);
+  o nick é extraído do link. Também dá para digitar só o nick.
+- **Sorteio**: os nicks cadastrados aparecem como sugestão nos campos, e o que for digitado com
+  maiúsculas, acentos ou espaços diferentes é corrigido para o nick certo.
+- **Apelidos**: outros nomes pelos quais a pessoa é chamada; também são reconhecidos no sorteio.
+- **✏️ Editar**: troca o link do op.gg ou o nick; o nick antigo vira apelido automaticamente.
+- **🔀 Juntar**: a mesma pessoa foi cadastrada duas vezes; as partidas passam para um só e o outro nome vira apelido.
 - **🗑️ Excluir**: só para quem ainda não jogou.
+
+No ranking, o nome de quem tem op.gg cadastrado vira link para o perfil.
 
 Ao registrar uma partida, o site avisa quais nomes são desconhecidos e vão virar jogadores novos.
