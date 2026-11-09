@@ -38,8 +38,13 @@ tags `<script>` no `index.html` importa**: `config.js` e `utils.js` primeiro, `m
 3. Quando o `schema.sql` mudar, cole e rode de novo: nada é apagado e a senha existente é mantida.
 4. Em **Project Settings → API**, copie a Project URL e a chave anon/publishable para
    `frontend/js/config.js`.
-5. Abra `frontend/index.html`. Para os outros acessarem, mande a pasta `frontend` ou hospede
-   (Netlify Drop, GitHub Pages).
+5. Abra `frontend/index.html`. Para os outros acessarem, hospede a pasta `frontend`.
+
+## Publicação
+
+O site é publicado no GitHub Pages por `.github/workflows/pages.yml`, que envia só a pasta
+`frontend/` como raiz do site (o link não tem `/frontend/`). Cada `git push` na `main` atualiza o
+site em ~1 minuto. Em **Settings → Pages**, o *Source* precisa estar em **GitHub Actions**.
 
 ## Jogadores e apelidos
 
