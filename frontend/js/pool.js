@@ -30,7 +30,7 @@ function makeTile(champ) {
     tile.className = 'tile';
     tile.draggable = true;
     tile.dataset.key = champ.key;
-    tile.title = champ.name + ' — arraste para a outra lista ou dê duplo clique';
+    tile.title = champ.name;
 
     const name = document.createElement('span');
     name.className = 'name';
@@ -41,9 +41,18 @@ function makeTile(champ) {
     if (champ.lanes.length) {
         const tag = document.createElement('span');
         tag.className = 'lanes';
-        tag.textContent = champ.lanes.join(' · ');
+        tag.textContent = champ.lanes.join(' ');
         tile.append(tag);
     }
+
+    // Botão para quem não pode arrastar (celular): bloqueia ou libera com um toque.
+    const act = document.createElement('button');
+    act.type = 'button';
+    act.className = 'tile-act';
+    act.setAttribute('aria-label', 'Bloquear ou liberar ' + champ.name);
+    act.append(icon('ban'), icon('undo'));
+    act.addEventListener('click', () => toggleBlocked(champ.key, champ.name));
+    tile.append(act);
 
     tile.addEventListener('dragstart', e => {
         e.dataTransfer.setData('text/plain', champ.key);
@@ -53,7 +62,9 @@ function makeTile(champ) {
 
     tile.addEventListener('dragend', () => tile.classList.remove('dragging'));
 
-    tile.addEventListener('dblclick', () => toggleBlocked(champ.key, champ.name));
+    tile.addEventListener('dblclick', e => {
+        if (!e.target.closest('.tile-act')) toggleBlocked(champ.key, champ.name);
+    });
 
     tileCache.set(champ.key, tile);
 
@@ -61,32 +72,30 @@ function makeTile(champ) {
 }
 
 function toggleBlocked(key, name) {
+    const tile = tileCache.get(key);
+
+    if (tile) {
+        tile.classList.remove('moved');
+        void tile.offsetWidth;
+        tile.classList.add('moved');
+    }
+
     if (blocked.has(key)) {
         blocked.delete(key);
-        $('status').textContent = `✅ ${name} liberado para a roleta.`;
+        notify(`✅ ${name} liberado para a roleta.`);
     } else {
         blocked.set(key, name);
-        $('status').textContent = `🚫 ${name} bloqueado.`;
+        notify(`🚫 ${name} bloqueado.`);
     }
 
     renderPools();
     save();
 }
 
-function emptyMessage(icon, text) {
+function emptyMessage(text) {
     const div = document.createElement('div');
     div.className = 'none';
-
-    const b = document.createElement('b');
-    b.textContent = icon;
-
-    const span = document.createElement('span');
-    span.textContent = text;
-
-    const inner = document.createElement('div');
-    inner.append(b, document.createElement('br'), span);
-    div.append(inner);
-
+    div.textContent = text;
     return div;
 }
 
@@ -119,13 +128,13 @@ function renderPools() {
     for (const c of shownBlock) fragB.append(makeTile(c));
 
     if (!shownAvail.length) {
-        fragA.append(emptyMessage('🔍', 'Nenhum campeão encontrado.'));
+        fragA.append(emptyMessage('Nenhum campeão encontrado.'));
     }
 
     if (!shownBlock.length) {
         fragB.append(blocked.size
-            ? emptyMessage('🔍', 'Nenhum bloqueado encontrado.')
-            : emptyMessage('⤵', 'Arraste campeões para cá para bloqueá-los.'));
+            ? emptyMessage('Nenhum bloqueado encontrado.')
+            : emptyMessage('Solte campeões aqui para tirá-los da roleta.'));
     }
 
     $('availList').replaceChildren(fragA);
@@ -133,24 +142,37 @@ function renderPools() {
 
     $('availCount').textContent = available.length;
     $('blockCount').textContent = blocked.size;
+    $('poolBtnCount').textContent = blocked.size;
 
     // Disponíveis por rota (cada rota precisa de 6 para o sorteio).
     const counts = $('laneCounts');
     counts.replaceChildren();
 
+    const low = [];
+
     for (const lane of lanes) {
         const n = available.filter(c => c.lanes.includes(lane)).length;
         const span = document.createElement('span');
 
-        span.textContent = `${lane} ${n}`;
+        const b = document.createElement('b');
+        b.textContent = lane;
+        span.append(b, ' ' + n);
 
         if (n < 6) {
             span.className = 'low';
             span.title = 'Menos de 6 disponíveis: o sorteio vai falhar';
+            low.push(lane);
         }
 
         counts.append(span);
     }
+
+    // Aviso no botão da barra quando alguma rota não tem 6 campeões.
+    const btn = $('openPool');
+    btn.classList.toggle('warn', low.length > 0);
+    btn.title = low.length
+        ? `Poucos campeões em ${low.join(', ')}: o sorteio vai falhar`
+        : 'Campeões fora da roleta';
 }
 
 // Zonas de soltar.
@@ -204,8 +226,17 @@ $('laneFilter').addEventListener('click', e => {
     renderPools();
 });
 
-$('clearPlayed').addEventListener('click', () => {
-    if (!confirm('Deseja liberar todos os campeões bloqueados?')) {
+$('openPool').addEventListener('click', () => openDialog($('poolDrawer')));
+
+$('clearPlayed').addEventListener('click', async () => {
+    if (!blocked.size) return;
+
+    if (!await ask({
+        title: 'Liberar todos os campeões?',
+        text: `Os ${blocked.size} bloqueados voltam para a roleta.`,
+        ok: 'Liberar todos',
+        danger: true
+    })) {
         return;
     }
 
@@ -214,6 +245,5 @@ $('clearPlayed').addEventListener('click', () => {
     renderPools();
     save();
 
-    $('status').textContent =
-        '✅ Todos os campeões foram liberados.';
+    notify('✅ Todos os campeões foram liberados.');
 });

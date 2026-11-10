@@ -54,11 +54,16 @@ async function secretIsValid(secret) {
 async function requestAdmin() {
     if (adminSecret) return true;
 
-    const secret = prompt('Senha do grupo para entrar no modo admin:');
+    const secret = await ask({
+        title: 'Modo admin',
+        text: 'Senha do grupo. Vale até fechar ou recarregar a página.',
+        input: { type: 'password', placeholder: 'Senha' },
+        ok: 'Entrar'
+    });
     if (!secret) return false;
 
     if (!await secretIsValid(secret)) {
-        alert('Senha errada.');
+        notify('⚠️ Senha errada.');
         return false;
     }
 

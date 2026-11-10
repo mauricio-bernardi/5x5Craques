@@ -20,7 +20,10 @@ for (let i = 0; i < 10; i++) {
     input.placeholder = 'Jogador ' + (i + 1);
     input.autocomplete = 'off';
     input.setAttribute('list', 'playerSuggestions');
-    input.addEventListener('input', save);
+    input.addEventListener('input', () => {
+        save();
+        updatePlayersCount();
+    });
 
     // Ao sair do campo, um apelido conhecido vira o nome oficial.
     input.addEventListener('change', () => {
@@ -40,6 +43,27 @@ for (let i = 0; i < 10; i++) {
 
     wrap.append(num, input);
     $('playerInputs').append(wrap);
+}
+
+// Painel dos 10 nomes: recolhe depois do sorteio para o tabuleiro ganhar espaço.
+function setPlayersOpen(open) {
+    $('playersPanel').dataset.open = String(open);
+    $('playersToggle').setAttribute('aria-expanded', String(open));
+}
+
+$('playersToggle').addEventListener('click', () => {
+    const open = $('playersPanel').dataset.open !== 'true';
+    setPlayersOpen(open);
+    if (open) {
+        const empty = playerNames().findIndex(n => !n);
+        $('player' + (empty < 0 ? 0 : empty)).focus({ preventScroll: true });
+    }
+});
+
+function updatePlayersCount() {
+    const n = playerNames().filter(Boolean).length;
+    $('playersCount').textContent = `${n}/10`;
+    $('playersCount').classList.toggle('full', n === 10);
 }
 
 function playerNames() {
@@ -78,34 +102,36 @@ function teamAvg(team) {
 }
 
 function updateResultButtons() {
+    const board = $('board');
+
+    board.classList.toggle('has-teams', !!playerTeams);
+    board.classList.toggle('saved', !!playerTeams && matchSaved);
+    board.classList.toggle('no-backend', !backendOn());
+
     for (let t = 0; t < 2; t++) {
         const btn = $('win' + (t + 1));
 
-        btn.textContent = `🏆 ${teamTitle(t)} venceu`;
+        btn.title = matchSaved
+            ? 'Resultado já registrado'
+            : `Registrar vitória de ${teamTitle(t)} no ranking`;
         btn.disabled = !playerTeams || spinning || matchSaved || savingMatch || !backendOn();
     }
 
     const info = $('balanceInfo');
 
-    if (!backendOn()) {
-        info.textContent = 'Configure o Supabase para salvar resultados e usar o ranking.';
-    } else if (!playerTeams || spinning) {
+    if (!backendOn() || !playerTeams || spinning) {
         info.textContent = '';
     } else {
         const a = Math.round(teamAvg(playerTeams[0]));
         const b = Math.round(teamAvg(playerTeams[1]));
 
-        info.textContent = `Rating médio: 🔵 ${a} × ${b} 🔴` +
-            (matchSaved ? ' · ✅ Resultado já registrado' : ' · Depois da partida, marque quem venceu:');
+        info.textContent = matchSaved ? 'registrado' : `${a} – ${b}`;
+        info.title = matchSaved ? 'Resultado já registrado no ranking' : 'Rating médio de cada time';
     }
 }
 
 function showPlayerTeams(animate) {
-    $('pteamName1').textContent = '🔵 ' + teamTitle(0);
-    $('pteamName2').textContent = '🔴 ' + teamTitle(1);
-    $('playerTeams').hidden = false;
-
-    const box = $('playerTeams');
+    const box = $('board');
     box.classList.remove('done');
 
     fillPlayerLists(playerTeams);
@@ -122,7 +148,7 @@ function readPlayers() {
     const filled = playerNames().filter(Boolean);
 
     if (filled.length !== 10) {
-        $('status').textContent = `⚠️ Preencha os 10 jogadores (faltam ${10 - filled.length}).`;
+        notify(`⚠️ Preencha os 10 jogadores (faltam ${10 - filled.length}).`);
         return null;
     }
 
@@ -142,9 +168,9 @@ function readPlayers() {
 
         if (seen.has(k)) {
             const first = filled[seen.get(k)];
-            $('status').textContent = norm(first) === norm(filled[i])
+            notify(norm(first) === norm(filled[i])
                 ? `⚠️ O nome "${filled[i]}" está repetido.`
-                : `⚠️ "${first}" e "${filled[i]}" são o mesmo jogador (${official[i]}).`;
+                : `⚠️ "${first}" e "${filled[i]}" são o mesmo jogador (${official[i]}).`);
             return null;
         }
 
@@ -184,11 +210,9 @@ function revealTeams(filled, teams, doneMsg) {
     // Efeito de roleta: embaralha os nomes por alguns instantes antes do resultado.
     spinning = true;
     updateResultButtons();
-    $('playerTeams').hidden = false;
-    $('playerTeams').classList.remove('done');
-    $('playerTeams').classList.add('spinning');
-    $('pteamName1').textContent = '🔵 ' + teamTitle(0);
-    $('pteamName2').textContent = '🔴 ' + teamTitle(1);
+    setPlayersOpen(false);
+    $('board').classList.remove('done');
+    $('board').classList.add('spinning');
 
     let ticks = 0;
     const total = 18;
@@ -201,11 +225,11 @@ function revealTeams(filled, teams, doneMsg) {
         if (ticks < total) {
             setTimeout(spin, 50 + ticks * 8);
         } else {
-            $('playerTeams').classList.remove('spinning');
+            $('board').classList.remove('spinning');
             spinning = false;
             showPlayerTeams(true);
             save();
-            $('status').textContent = doneMsg;
+            notify(doneMsg);
         }
     };
 
@@ -220,12 +244,11 @@ async function registerResult(winner) {
     // Nomes que o banco não conhece viram jogadores novos: avisa para pegar nick escrito errado.
     const unknown = rosterLoaded ? playerTeams.flat().filter(n => !findPlayer(n)) : [];
 
-    const warning = unknown.length
-        ? `\n\n⚠️ Jogador(es) novo(s), serão cadastrados: ${unknown.join(', ')}\n` +
-          'Se for nick escrito errado, cancele e cadastre como apelido na seção Jogadores.'
-        : '';
-
-    if (!confirm(`Registrar vitória de "${name}"?\n\n🔵 ${playerTeams[0].join(', ')}\n🔴 ${playerTeams[1].join(', ')}${warning}`)) {
+    if (!await ask({
+        title: `Vitória de ${name}?`,
+        text: confirmBody([teamsPreview(playerTeams, winner), unknownNote(unknown)]),
+        ok: 'Registrar vitória'
+    })) {
         return;
     }
 
@@ -241,11 +264,11 @@ async function registerResult(winner) {
 
         matchSaved = true;
         save();
-        $('status').textContent = `🏆 Vitória de "${name}" registrada no ranking!`;
+        notify(`🏆 Vitória de "${name}" registrada no ranking!`);
 
         await refreshRanking();
     } catch (err) {
-        $('status').textContent = '⚠️ Não foi possível registrar: ' + err.message;
+        notify('⚠️ Não foi possível registrar: ' + err.message);
     } finally {
         savingMatch = false;
         updateResultButtons();
@@ -260,7 +283,11 @@ $('clearPlayers').addEventListener('click', () => {
 
     playerTeams = null;
     matchSaved = false;
-    $('playerTeams').hidden = true;
+    $('pteamList1').replaceChildren();
+    $('pteamList2').replaceChildren();
+    updateResultButtons();
+    updatePlayersCount();
+    setPlayersOpen(true);
     save();
     $('player0').focus();
 });

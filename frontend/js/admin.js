@@ -3,51 +3,68 @@
 
 function setAdminMode(on) {
     document.body.classList.toggle('admin', on);
-    $('adminPanel').hidden = !on;
-    $('adminToggle').textContent = on ? '🔒 Sair do admin' : '🔓 Modo admin';
+
+    const btn = $('adminToggle');
+    btn.setAttribute('aria-pressed', String(on));
+    btn.title = on ? 'Painel admin' : 'Modo admin';
 
     if (on) {
         rosterStatus('');
         showStatus('manualStatus', '');
         if (!$('manualDate').value) $('manualDate').value = localDateTime(new Date());
         renderRoster();
+    } else {
+        closeDialog($('adminDrawer'));
     }
 }
 
-$('adminToggle').addEventListener('click', async () => {
-    if (adminSecret) {
-        exitAdmin();
-        return;
+// Abre a gaveta de admin (pede a senha antes, se preciso) já na aba escolhida.
+async function openAdmin(tab) {
+    if (!adminSecret) {
+        if (!backendOn()) {
+            notify('⚠️ Configure o Supabase em js/config.js para usar o modo admin.');
+            return;
+        }
+
+        try {
+            if (!await requestAdmin()) return;
+        } catch (err) {
+            notify('⚠️ Não foi possível verificar a senha: ' + err.message);
+            return;
+        }
     }
 
-    if (!backendOn()) {
-        alert('Configure o Supabase em js/config.js para usar o modo admin.');
-        return;
-    }
+    if (tab) selectAdminTab(tab);
+    openDialog($('adminDrawer'));
+}
 
-    try {
-        await requestAdmin();
-    } catch (err) {
-        alert('Não foi possível verificar a senha: ' + err.message);
-    }
+$('adminToggle').addEventListener('click', () => openAdmin());
+
+for (const btn of document.querySelectorAll('[data-admin-tab]')) {
+    btn.addEventListener('click', () => openAdmin(btn.dataset.adminTab));
+}
+
+$('adminExit').addEventListener('click', () => {
+    exitAdmin();
+    notify('✅ Você saiu do modo admin.');
 });
 
 // Abas do painel.
+function selectAdminTab(id) {
+    for (const b of $('adminTabs').children) {
+        b.classList.toggle('active', b.dataset.tab === id);
+        $(b.dataset.tab).hidden = b.dataset.tab !== id;
+    }
+}
+
 $('adminTabs').addEventListener('click', e => {
     const btn = e.target.closest('button');
-    if (!btn) return;
-
-    for (const b of $('adminTabs').children) {
-        b.classList.toggle('active', b === btn);
-        $(b.dataset.tab).hidden = b !== btn;
-    }
+    if (btn) selectAdminTab(btn.dataset.tab);
 });
 
 // Mensagem num parágrafo de status; começando com ⚠️ aparece em vermelho.
 function showStatus(id, text) {
-    const el = $(id);
-    el.textContent = text;
-    el.classList.toggle('error', text.startsWith('⚠️'));
+    setLine(id, text);
 }
 
 // "2026-11-08T21:00" no fuso do navegador, para o campo datetime-local.
@@ -88,7 +105,7 @@ function manualTeam(t) {
 
 $('manualFromDraw').addEventListener('click', () => {
     if (!playerTeams) {
-        showStatus('manualStatus', '⚠️ Nenhum time sorteado ainda. Use o "Sorteio de jogadores" acima ou preencha à mão.');
+        showStatus('manualStatus', '⚠️ Nenhum time sorteado ainda. Sorteie na aba Partida ou preencha à mão.');
         return;
     }
 
@@ -96,7 +113,7 @@ $('manualFromDraw').addEventListener('click', () => {
         $(`manual${t + 1}_${i}`).value = name;
     }));
 
-    showStatus('manualStatus', '⤵ Times copiados do sorteio. Escolha o vencedor e registre.');
+    showStatus('manualStatus', 'Times copiados do sorteio. Escolha o vencedor e registre.');
 });
 
 $('tabMatch').addEventListener('submit', async e => {
@@ -140,15 +157,11 @@ $('tabMatch').addEventListener('submit', async e => {
     const unknown = rosterLoaded ? teams.flat().filter(n => !findPlayer(n)) : [];
     const date = when.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
-    if (!confirm(
-        `Registrar partida de ${date}?\n\n` +
-        `🔵 ${teams[0].join(', ')}${winner === 1 ? '  🏆' : ''}\n` +
-        `🔴 ${teams[1].join(', ')}${winner === 2 ? '  🏆' : ''}` +
-        (unknown.length
-            ? `\n\n⚠️ Jogador(es) novo(s), serão cadastrados: ${unknown.join(', ')}\n` +
-              'Se for nick escrito errado, cancele e corrija (ou cadastre na aba Jogadores).'
-            : '')
-    )) {
+    if (!await ask({
+        title: `Registrar partida de ${date}?`,
+        text: confirmBody([teamsPreview(teams, winner, ['Time azul', 'Time vermelho']), unknownNote(unknown)]),
+        ok: 'Registrar partida'
+    })) {
         return;
     }
 
@@ -163,7 +176,8 @@ $('tabMatch').addEventListener('submit', async e => {
         for (const t of [1, 2]) for (let i = 0; i < 5; i++) $(`manual${t}_${i}`).value = '';
         $('manualWinner').value = '';
 
-        showStatus('manualStatus', `🏆 Partida de ${date} registrada!`);
+        showStatus('manualStatus', `Partida de ${date} registrada.`);
+        notify(`✅ Partida de ${date} registrada.`);
         await refreshRanking();
     } catch (err) {
         showStatus('manualStatus', '⚠️ Não foi possível registrar: ' + err.message);

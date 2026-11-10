@@ -61,11 +61,10 @@ function draw() {
 
         render();
 
-        $('status').textContent =
-            '✅ Sorteio realizado! 30 campeões diferentes, sem os bloqueados.';
+        notify('✅ 30 campeões sorteados, sem repetir e sem bloqueados.');
 
     } catch (err) {
-        $('status').textContent = '⚠️ ' + err.message;
+        notify('⚠️ ' + err.message);
     }
 }
 
@@ -76,18 +75,28 @@ function selectedCount() {
 function updateProgress() {
     const n = selectedCount();
 
-    $('progressText').textContent = registered ? 'Registrada' : `${n}/10`;
+    $('progressText').textContent = registered ? '10/10' : `${n}/10`;
+    $('progressText').classList.toggle('done', registered);
     $('progressBar').style.width = (registered ? 100 : n * 10) + '%';
     $('markPlayed').disabled = !last || registered ||
         selected.some(s => s.size !== PICKS_PER_TEAM);
+
+    $('board').classList.toggle('registered', registered);
+
+    for (let i = 0; i < 2; i++) {
+        const el = $('picked' + i);
+        el.textContent = `${selected[i].size}/${PICKS_PER_TEAM}`;
+        el.classList.toggle('full', selected[i].size === PICKS_PER_TEAM);
+        el.hidden = !last || (!n && !registered);
+    }
 }
 
 // Atualiza os botões de um time: marcado, ou apagado quando o time já tem 5.
-function paintTeam(section, i) {
+function paintTeam(i) {
     const full = selected[i].size >= PICKS_PER_TEAM;
 
-    for (const c of section.querySelectorAll('.champ')) {
-        const sel = selected[i].has(c.title);
+    for (const c of $('results').querySelectorAll(`.champ[data-team="${i}"]`)) {
+        const sel = selected[i].has(c.dataset.name);
 
         c.classList.toggle('selected', sel);
         c.classList.toggle('dim', full && !sel);
@@ -95,84 +104,85 @@ function paintTeam(section, i) {
     }
 }
 
-function render() {
-    const host = $('results');
+function champButton(name, i, delay) {
+    const cell = document.createElement('button');
 
-    host.replaceChildren();
+    cell.type = 'button';
+    cell.className = 'champ';
+    cell.dataset.team = i;
+    cell.dataset.name = name;
+    cell.title = name;
+    cell.style.setProperty('--d', delay + 'ms');
 
-    last.forEach((team, i) => {
-        const section = document.createElement('section');
-        section.className = 'card team ' + (i === 0 ? 'blue' : 'red');
+    const nm = document.createElement('span');
+    nm.className = 'name';
+    nm.textContent = name;
 
-        const title = document.createElement('h2');
+    const mark = document.createElement('span');
+    mark.className = 'mark';
+    mark.append(icon('check'));
 
-        title.id = 'resultTitle' + i;
-        title.textContent = teamTitle(i);
+    cell.append(portrait(name), mark, nm);
 
-        section.append(title);
-
-        for (const lane of lanes) {
-            const row = document.createElement('div');
-            row.className = 'lane';
-
-            const label = document.createElement('span');
-            label.className = 'lane-tag';
-            label.textContent = lane;
-
-            const champions = document.createElement('div');
-            champions.className = 'champions';
-
-            for (const name of team[lane]) {
-                const cell = document.createElement('button');
-
-                cell.type = 'button';
-                cell.className = 'champ';
-
-                const nm = document.createElement('span');
-                nm.className = 'name';
-                nm.textContent = name;
-
-                cell.title = name;
-                cell.append(portrait(name), nm);
-
-                cell.addEventListener('click', () => {
-                    if (registered) {
-                        $('status').textContent =
-                            '⚠️ Esta partida já foi registrada. Sorteie outra para selecionar novos campeões.';
-                        return;
-                    }
-
-                    const picks = selected[i];
-
-                    if (picks.has(name)) {
-                        picks.delete(name);
-                    } else if (picks.size >= PICKS_PER_TEAM) {
-                        $('status').textContent =
-                            `⚠️ ${teamTitle(i)} já tem ${PICKS_PER_TEAM} campeões. Desmarque um para trocar.`;
-                        return;
-                    } else {
-                        picks.add(name);
-                    }
-
-                    paintTeam(section, i);
-                    updateProgress();
-
-                    $('status').textContent =
-                        `🎮 ${teamTitle(0)}: ${selected[0].size}/${PICKS_PER_TEAM} · ` +
-                        `${teamTitle(1)}: ${selected[1].size}/${PICKS_PER_TEAM}`;
-                });
-
-                champions.append(cell);
-            }
-
-            row.append(label, champions);
-            section.append(row);
+    cell.addEventListener('click', () => {
+        if (registered) {
+            notify('⚠️ Estes campeões já foram bloqueados. Sorteie de novo para marcar outros.');
+            return;
         }
 
-        paintTeam(section, i);
-        host.append(section);
+        const picks = selected[i];
+
+        if (picks.has(name)) {
+            picks.delete(name);
+        } else if (picks.size >= PICKS_PER_TEAM) {
+            notify(`⚠️ ${teamTitle(i)} já tem ${PICKS_PER_TEAM} campeões. Desmarque um para trocar.`);
+            return;
+        } else {
+            picks.add(name);
+        }
+
+        paintTeam(i);
+        updateProgress();
     });
 
+    return cell;
+}
+
+// Tabuleiro espelhado: uma linha por rota, Azul à esquerda e Vermelho à direita.
+// O primeiro campeão de cada lado fica junto da coluna das rotas; a revelação sai do centro.
+function render() {
+    const host = $('results');
+    const frag = document.createDocumentFragment();
+
+    lanes.forEach((lane, r) => {
+        const row = document.createElement('div');
+        row.className = 'lane-row';
+        row.style.setProperty('--d', r * 50 + 'ms');
+
+        const groups = last.map((team, i) => {
+            const g = document.createElement('div');
+            g.className = 'picks ' + (i === 0 ? 'blue' : 'red');
+
+            team[lane].forEach((name, k) => g.append(champButton(name, i, r * 50 + k * 45 + 60)));
+
+            return g;
+        });
+
+        const tag = document.createElement('span');
+        tag.className = 'lane-tag';
+        tag.textContent = lane;
+
+        row.append(groups[0], tag, groups[1]);
+        frag.append(row);
+    });
+
+    host.classList.remove('reveal');
+    host.replaceChildren(frag);
+    void host.offsetWidth;
+    host.classList.add('reveal');
+
+    paintTeam(0);
+    paintTeam(1);
     updateProgress();
 }
 
@@ -185,19 +195,41 @@ function formatted() {
     ).join('\n\n');
 }
 
-$('draw').addEventListener('click', draw);
+$('draw').addEventListener('click', () => {
+    const btn = $('draw');
+    btn.classList.remove('rolling');
+    void btn.offsetWidth;
+    btn.classList.add('rolling');
+    draw();
+});
+
+// Tecla S sorteia de novo (fora de campos de texto e de janelas abertas).
+document.addEventListener('keydown', e => {
+    if (e.key.toLowerCase() !== 's' || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target.closest('input, select, textarea, [contenteditable]')) return;
+    if (document.querySelector('dialog[open]') || $('view-match').hidden) return;
+
+    e.preventDefault();
+    $('draw').click();
+});
+
+function copied() {
+    const btn = $('copy');
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1400);
+}
 
 $('copy').addEventListener('click', async () => {
     if (!last) {
-        $('status').textContent =
-            '⚠️ Faça um sorteio antes de copiar.';
+        notify('⚠️ Faça um sorteio antes de copiar.');
         return;
     }
 
     try {
         await navigator.clipboard.writeText(formatted());
 
-        $('status').textContent = '📋 Resultado copiado!';
+        copied();
+        notify('📋 Resultado copiado.');
 
     } catch {
         const t = document.createElement('textarea');
@@ -210,31 +242,30 @@ $('copy').addEventListener('click', async () => {
 
         t.remove();
 
-        $('status').textContent = ok
-            ? '📋 Resultado copiado!'
-            : '⚠️ Não foi possível copiar automaticamente.';
+        if (ok) copied();
+
+        notify(ok
+            ? '📋 Resultado copiado.'
+            : '⚠️ Não foi possível copiar automaticamente.');
     }
 });
 
 $('markPlayed').addEventListener('click', () => {
     if (!last) {
-        $('status').textContent =
-            '⚠️ Sorteie os times primeiro.';
+        notify('⚠️ Sorteie os times primeiro.');
         return;
     }
 
     if (registered) {
-        $('status').textContent =
-            '⚠️ Esta partida já foi registrada. Sorteie outra.';
+        notify('⚠️ Estes campeões já foram bloqueados. Sorteie de novo.');
         return;
     }
 
     const short = [0, 1].find(i => selected[i].size !== PICKS_PER_TEAM);
 
     if (short !== undefined) {
-        $('status').textContent =
-            `⚠️ Selecione ${PICKS_PER_TEAM} campeões em cada time (de qualquer rota). ` +
-            `${teamTitle(short)} está com ${selected[short].size}.`;
+        notify(`⚠️ Selecione ${PICKS_PER_TEAM} campeões em cada time (de qualquer rota). ` +
+            `${teamTitle(short)} está com ${selected[short].size}.`);
         return;
     }
 
@@ -247,6 +278,5 @@ $('markPlayed').addEventListener('click', () => {
     registered = true;
     updateProgress();
 
-    $('status').textContent =
-        `✅ Partida registrada! ${blocked.size - before} campeão(ões) jogado(s) bloqueado(s). Os outros 20 continuam disponíveis.`;
+    notify(`✅ ${blocked.size - before} campeões jogados bloqueados. Os outros 20 continuam na roleta.`);
 });

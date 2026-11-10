@@ -14,6 +14,7 @@ Roleta de campeões de LoL para 2 times, com sorteio/balanceamento de jogadores 
     └── js/               # carregados em ordem pelo index.html
         ├── config.js     # URL/chave do Supabase e parâmetros do rating (único a editar)
         ├── utils.js      # $, norm, searchKey, shuffle
+        ├── ui.js         # ícones, avisos (toast), modal de confirmação, gavetas, abas
         ├── champions.js  # lista de campeões, retratos, Data Dragon
         ├── storage.js    # save/load no localStorage
         ├── pool.js       # campeões bloqueados (arrastar e soltar)
@@ -49,11 +50,11 @@ site em ~1 minuto. Em **Settings → Pages**, o *Source* precisa estar em **GitH
 
 ## Modo admin
 
-O botão **🔓 Modo admin** (no card do Ranking) pede a senha do grupo e libera:
+O botão **Admin** (canto superior direito) pede a senha do grupo e abre a gaveta de admin:
 
-- **⚔️ Registrar partida**: escolher os 10 jogadores, o vencedor e a data/hora (para lançar jogos antigos);
-  o botão **⤵ Usar times do sorteio** preenche com os times sorteados.
-- **👥 Jogadores**: cadastro e edição (veja abaixo).
+- **Registrar partida**: escolher os 10 jogadores, o vencedor e a data/hora (para lançar jogos antigos);
+  o botão **Usar times do sorteio** preenche com os times sorteados.
+- **Jogadores**: cadastro e edição (veja abaixo).
 - **Excluir** partidas no histórico (fora do modo admin o botão nem aparece).
 
 A senha fica só na memória da página: fechar, recarregar ou abrir outra aba pede de novo.
@@ -66,9 +67,9 @@ Registrar o resultado pelos botões do sorteio também pede a senha se o modo ad
 - **Sorteio**: os nicks cadastrados aparecem como sugestão nos campos, e o que for digitado com
   maiúsculas, acentos ou espaços diferentes é corrigido para o nick certo.
 - **Apelidos**: outros nomes pelos quais a pessoa é chamada; também são reconhecidos no sorteio.
-- **✏️ Editar**: troca o link do op.gg ou o nick; o nick antigo vira apelido automaticamente.
-- **🔀 Juntar**: a mesma pessoa foi cadastrada duas vezes; as partidas passam para um só e o outro nome vira apelido.
-- **🗑️ Excluir**: só para quem ainda não jogou.
+- **Editar** (lápis): troca o link do op.gg ou o nick; o nick antigo vira apelido automaticamente.
+- **Juntar**: a mesma pessoa foi cadastrada duas vezes; as partidas passam para um só e o outro nome vira apelido.
+- **Excluir** (lixeira): só para quem ainda não jogou.
 
 No ranking, o nome de quem tem op.gg cadastrado vira link para o perfil.
 

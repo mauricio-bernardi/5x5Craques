@@ -25,7 +25,7 @@ function renderRanking() {
         const tr = document.createElement('tr');
         tr.className = 'none-row';
 
-        const td = cell('td', 'Nenhum jogador ainda. Clique em "Adicionar jogador" ou registre uma partida.');
+        const td = cell('td', 'Nenhum jogador ainda. Sorteie os times e registre o vencedor.');
         td.colSpan = 7;
 
         tr.append(td);
@@ -81,42 +81,56 @@ function renderRanking() {
         const row = document.createElement('div');
         row.className = 'match-row';
 
-        const date = new Date(m.played_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+        const when = new Date(m.played_at);
+        const date = when.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+        const time = cell('time', when.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), 'date');
+        time.dateTime = m.played_at;
+        time.title = date;
 
         const teams = document.createElement('div');
         teams.className = 'teams';
 
         [m.team1, m.team2].forEach((team, t) => {
             const won = m.winner === t + 1;
-            const side = cell('div', `${t ? '🔴' : '🔵'} ${(team || []).join(', ')}${won ? '  🏆' : ''}`, 'side' + (won ? ' win' : ''));
+            const side = cell('div', (team || []).join(', '), 'mside ' + (t ? 'red' : 'blue') + (won ? ' won' : ''));
+
+            if (won) {
+                side.prepend(icon('trophy'));
+                side.title = 'Venceu';
+            }
+
             teams.append(side);
         });
 
-        const del = cell('button', 'Excluir', 'btn btn-danger admin-only');
-        del.type = 'button';
-        del.title = 'Excluir esta partida (registrada por engano)';
+        const del = iconButton('trash', 'Excluir esta partida', 'admin-only danger');
         del.addEventListener('click', () => deleteMatch(m, date));
 
-        row.append(cell('span', date, 'date'), teams, del);
+        row.append(time, teams, del);
         list.append(row);
     }
 }
 
 async function deleteMatch(m, date) {
-    if (!confirm(`Excluir a partida de ${date}? O ranking será recalculado.`)) return;
+    if (!await ask({
+        title: 'Excluir partida?',
+        text: confirmBody([`Partida de ${date}. O ranking será recalculado.`, teamsPreview([m.team1 || [], m.team2 || []], m.winner, ['Time azul', 'Time vermelho'])]),
+        ok: 'Excluir',
+        danger: true
+    })) return;
 
     try {
         await rpc('delete_match', { p_id: m.id });
-        $('status').textContent = '🗑️ Partida excluída.';
+        notify('🗑️ Partida excluída.');
         await refreshRanking();
     } catch (err) {
-        $('status').textContent = '⚠️ Não foi possível excluir: ' + err.message;
+        notify('⚠️ Não foi possível excluir: ' + err.message);
     }
 }
 
 async function refreshRanking() {
     if (!backendOn()) {
-        $('rankInfo').textContent = '⚠️ Backend não configurado: preencha SUPABASE_URL e SUPABASE_KEY no código da página.';
+        $('rankInfo').textContent = 'Ranking desligado: preencha SUPABASE_URL e SUPABASE_KEY em js/config.js.';
         renderRanking();
         await refreshRoster();
         updateResultButtons();
@@ -133,11 +147,11 @@ async function refreshRanking() {
         await rosterDone;
         stats = computeStats(history);
 
-        $('rankInfo').textContent =
-            `${history.length} partida(s) registrada(s). Todo mundo começa com ${DEFAULT_RATING}; ` +
-            `quem tem menos de ${MIN_GAMES} jogos aparece apagado e quem ainda não jogou fica no fim.`;
+        $('rankInfo').textContent = `${history.length} ${history.length === 1 ? 'partida' : 'partidas'}`;
+        $('rankNote').textContent =
+            `Todos começam com ${DEFAULT_RATING}. Em cinza: menos de ${MIN_GAMES} jogos.`;
     } catch (err) {
-        $('rankInfo').textContent = '⚠️ Não foi possível carregar o ranking: ' + err.message;
+        $('rankInfo').textContent = 'Não foi possível carregar: ' + err.message;
     }
 
     renderRanking();
@@ -149,4 +163,9 @@ async function refreshRanking() {
     }
 }
 
-$('refreshRank').addEventListener('click', refreshRanking);
+$('refreshRank').addEventListener('click', async () => {
+    const btn = $('refreshRank');
+    btn.classList.add('spin');
+    await refreshRanking();
+    btn.classList.remove('spin');
+});

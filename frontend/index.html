@@ -3,218 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Roleta LoL — 2 Times</title>
+    <meta name="theme-color" content="#17191E">
+    <title>5x5 Craques</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Saira+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
-    <main class="wrap">
-        <header>
-            <h1>Roleta de Campeões dos Craques</h1>
-            <div class="tagline">
-                <span>2 TIMES</span>
-                <span>5 ROTAS</span>
-                <span>3 OPÇÕES POR ROTA</span>
-                <span>30 CAMPEÕES SEM REPETIÇÃO</span>
+    <!-- Ícones (usados com <svg class="i"><use href="#i-nome"/></svg>) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.3" fill="currentColor" stroke="none"/></symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+        <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.6-1.8"/></symbol>
+        <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol>
+        <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+        <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/></symbol>
+        <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></symbol>
+        <symbol id="i-merge" viewBox="0 0 24 24"><circle cx="6" cy="5.5" r="2.2"/><circle cx="6" cy="18.5" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M6 7.7v8.6"/><path d="M6 7.7c0 3.3 3 4.3 9.8 4.3"/></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="m6 7 1 13h10l1-13"/><path d="M9 7V4h6v3"/></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+        <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 4h4v4"/><path d="M4 20 20 4"/><path d="M20 16v4h-4"/><path d="m14.5 14.5 5.5 5.5"/><path d="M4 4l5 5"/></symbol>
+        <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16"/><path d="M8 20h8"/><path d="M5 7h14"/><path d="M5 7 2.5 13a2.6 2.6 0 0 0 5 0z"/><path d="m19 7-2.5 6a2.6 2.6 0 0 0 5 0z"/></symbol>
+        <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 6h3v1a3 3 0 0 1-3 3M7 6H4v1a3 3 0 0 0 3 3"/></symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.8 20h18.4z"/><path d="M12 10v4.5"/><path d="M12 17.3v.2"/></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+        <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.2a5.5 5.5 0 0 1 3 5.8"/></symbol>
+        <symbol id="i-exit" viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="m9 8-4 4 4 4"/><path d="M5 12h10"/></symbol>
+        <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></symbol>
+        <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></symbol>
+        <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M20 20H9"/><path d="m4.5 15.5 9-9a2 2 0 0 1 2.8 0l3.2 3.2a2 2 0 0 1 0 2.8L13 19H8z"/></symbol>
+    </svg>
+
+    <header class="topbar">
+        <div class="brand"><b>5x5</b> Craques</div>
+
+        <nav class="views" id="viewNav" aria-label="Seções">
+            <button type="button" data-view="match" class="active">Partida</button>
+            <button type="button" data-view="rank">Ranking</button>
+        </nav>
+
+        <button class="icon-btn admin-btn" id="adminToggle" type="button" title="Modo admin" aria-pressed="false">
+            <svg class="i i-lock"><use href="#i-lock"/></svg>
+            <svg class="i i-unlock"><use href="#i-unlock"/></svg>
+            <span>Admin</span>
+        </button>
+    </header>
+
+    <!-- ===================== PARTIDA ===================== -->
+    <main class="view" id="view-match">
+
+        <!-- Jogadores (painel recolhível) -->
+        <section class="players" id="playersPanel" data-open="true">
+            <div class="players-head">
+                <button type="button" class="players-toggle" id="playersToggle" aria-expanded="true" aria-controls="playerInputs">
+                    <svg class="i"><use href="#i-users"/></svg>
+                    <span>Jogadores</span>
+                    <span class="pill" id="playersCount">0/10</span>
+                    <svg class="i chev"><use href="#i-chevron"/></svg>
+                </button>
+
+                <div class="players-actions">
+                    <button class="btn btn-quiet" id="clearPlayers" type="button" title="Apagar os 10 nomes">
+                        <svg class="i"><use href="#i-eraser"/></svg><span>Limpar</span>
+                    </button>
+                    <button class="btn btn-quiet" id="drawPlayers" type="button" title="Divide os 10 jogadores ao acaso">
+                        <svg class="i"><use href="#i-shuffle"/></svg><span>Aleatório</span>
+                    </button>
+                    <button class="btn btn-line" id="balancePlayers" type="button" title="Divide pelos ratings do ranking, com médias o mais parecidas possível">
+                        <svg class="i"><use href="#i-scale"/></svg><span>Balancear</span>
+                    </button>
+                </div>
             </div>
-        </header>
 
-        <section class="card">
-            <div class="setup">
-                <div class="field blue">
-                    <label for="team1">🔵 Time Azul</label>
-                    <input type="text" id="team1" maxlength="50" value="Time 1">
-                </div>
-
-                <div class="field red">
-                    <label for="team2">🔴 Time Vermelho</label>
-                    <input type="text" id="team2" maxlength="50" value="Time 2">
-                </div>
-
-                <div class="actions">
-                    <button class="btn btn-primary" id="draw">🎲 Sortear campeões</button>
-                    <button class="btn btn-ghost" id="copy" title="Copiar resultado">📋 Copiar</button>
-                </div>
-            </div>
-
-            <div class="status" id="status" role="status"></div>
-        </section>
-
-        <section class="players-section">
-            <h2 class="section-title">Sorteio de jogadores</h2>
-
-            <div class="card">
-                <div class="players-top">
-                    <p>Escreva os 10 jogadores e sorteie, ou balanceie os times pelo rating do ranking.</p>
-                    <div class="actions">
-                        <button class="btn btn-ghost" id="clearPlayers" type="button">Limpar nomes</button>
-                        <button class="btn btn-ghost" id="drawPlayers" type="button">🎰 Sortear aleatório</button>
-                        <button class="btn btn-primary" id="balancePlayers" type="button">⚖️ Balancear por rating</button>
-                    </div>
-                </div>
-
+            <div class="players-body">
                 <div class="players-grid" id="playerInputs"></div>
-
-                <div class="player-teams" id="playerTeams" hidden>
-                    <div class="pteam blue">
-                        <h3 id="pteamName1">Time 1</h3>
-                        <ol id="pteamList1"></ol>
-                    </div>
-                    <div class="vs">VS</div>
-                    <div class="pteam red">
-                        <h3 id="pteamName2">Time 2</h3>
-                        <ol id="pteamList2"></ol>
-                    </div>
-
-                    <div class="result-actions">
-                        <span class="sub" id="balanceInfo"></span>
-                        <button class="btn btn-blue" id="win1" type="button">🏆 Time 1 venceu</button>
-                        <button class="btn btn-red" id="win2" type="button">🏆 Time 2 venceu</button>
-                    </div>
-                </div>
             </div>
         </section>
 
-        <section class="rank-section">
-            <h2 class="section-title">Ranking</h2>
-
-            <div class="card">
-                <div class="players-top">
-                    <p id="rankInfo">Carregando...</p>
-                    <div class="actions">
-                        <button class="btn btn-ghost" id="refreshRank" type="button">🔄 Atualizar</button>
-                        <button class="btn btn-primary" id="adminToggle" type="button">🔓 Modo admin</button>
-                    </div>
+        <!-- Tabuleiro: Azul | rotas | Vermelho -->
+        <section class="board" id="board" aria-label="Sorteio de campeões">
+            <div class="board-head">
+                <div class="side blue">
+                    <label class="team-name">
+                        <span class="sr">Nome do time azul</span>
+                        <input type="text" id="team1" maxlength="50" value="Time 1" spellcheck="false">
+                        <svg class="i"><use href="#i-pencil"/></svg>
+                        <span class="picked" id="picked0" title="Campeões jogados marcados" hidden>0/5</span>
+                    </label>
+                    <ol class="lineup" id="pteamList1"></ol>
+                    <button class="win" id="win1" type="button"><svg class="i"><use href="#i-trophy"/></svg><span>Venceu</span></button>
                 </div>
 
-                <!-- Painel de admin: só aparece depois de digitar a senha do grupo (vale até fechar/recarregar a página). -->
-                <div class="admin-panel" id="adminPanel" hidden>
-                    <div class="admin-head">
-                        <b>🛠️ Modo admin ativo</b>
-                        <span class="sub">Excluir partidas também está liberado no histórico. A senha vale até fechar ou recarregar a página.</span>
-                    </div>
-
-                    <div class="seg" id="adminTabs">
-                        <button type="button" data-tab="tabMatch" class="active">⚔️ Registrar partida</button>
-                        <button type="button" data-tab="tabPlayers">👥 Jogadores</button>
-                    </div>
-
-                    <!-- Partida manual -->
-                    <form class="admin-tab manual" id="tabMatch" autocomplete="off">
-                        <div class="manual-teams">
-                            <fieldset class="pteam blue">
-                                <legend>🔵 Time Azul</legend>
-                                <div class="manual-list" id="manualTeam1"></div>
-                            </fieldset>
-                            <fieldset class="pteam red">
-                                <legend>🔴 Time Vermelho</legend>
-                                <div class="manual-list" id="manualTeam2"></div>
-                            </fieldset>
-                        </div>
-
-                        <div class="manual-foot">
-                            <div class="field">
-                                <label for="manualWinner">Vencedor</label>
-                                <select id="manualWinner">
-                                    <option value="">Escolha...</option>
-                                    <option value="1">🔵 Time Azul</option>
-                                    <option value="2">🔴 Time Vermelho</option>
-                                </select>
-                            </div>
-                            <div class="field">
-                                <label for="manualDate">Data e hora da partida</label>
-                                <input type="datetime-local" id="manualDate">
-                            </div>
-                            <div class="actions">
-                                <button class="btn btn-ghost" id="manualFromDraw" type="button" title="Preenche com os times do sorteio de jogadores">⤵ Usar times do sorteio</button>
-                                <button class="btn btn-primary" type="submit">Registrar partida</button>
-                            </div>
-                        </div>
-
-                        <p class="roster-status" id="manualStatus" role="status"></p>
-                    </form>
-
-                    <!-- Jogadores -->
-                    <div class="admin-tab" id="tabPlayers" hidden>
-                        <form class="roster-add" id="rosterAdd">
-                            <input type="text" id="rosterNew" maxlength="200" autocomplete="off"
-                                   placeholder="Cole o link do op.gg (ex.: https://op.gg/lol/summoners/br/Nick-BR1) ou digite o nick">
-                            <button class="btn btn-primary" type="submit">Adicionar</button>
-                        </form>
-
-                        <p class="roster-status" id="rosterStatus" role="status"></p>
-
-                        <div class="roster-tools">
-                            <h3 class="history-title">Jogadores cadastrados</h3>
-                            <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
-                        </div>
-
-                        <div class="roster" id="rosterList"></div>
-                    </div>
+                <div class="spine-head">
+                    <span class="vs">vs</span>
+                    <span class="avg" id="balanceInfo" title="Rating médio de cada time"></span>
                 </div>
 
-                <div class="rank-wrap">
-                    <table class="rank">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Jogador</th>
-                                <th class="num">Rating</th>
-                                <th class="num">Jogos</th>
-                                <th class="num">V</th>
-                                <th class="num">D</th>
-                                <th class="num">Winrate</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rankBody"></tbody>
-                    </table>
+                <div class="side red">
+                    <label class="team-name">
+                        <span class="sr">Nome do time vermelho</span>
+                        <input type="text" id="team2" maxlength="50" value="Time 2" spellcheck="false">
+                        <svg class="i"><use href="#i-pencil"/></svg>
+                        <span class="picked" id="picked1" title="Campeões jogados marcados" hidden>0/5</span>
+                    </label>
+                    <ol class="lineup" id="pteamList2"></ol>
+                    <button class="win" id="win2" type="button"><svg class="i"><use href="#i-trophy"/></svg><span>Venceu</span></button>
                 </div>
-
-                <h3 class="history-title">Últimas partidas</h3>
-                <div class="history" id="history"></div>
             </div>
+
+            <div class="lane-board" id="results"></div>
         </section>
 
-        <datalist id="playerSuggestions"></datalist>
+        <!-- Barra de ações fixa -->
+        <div class="dock" role="toolbar" aria-label="Ações do sorteio">
+            <div class="dock-main">
+                <button class="btn btn-primary btn-draw" id="draw" type="button" title="Sortear campeões (tecla S)">
+                    <svg class="i"><use href="#i-dice"/></svg><span>Sortear campeões</span>
+                </button>
+                <button class="icon-btn" id="copy" type="button" title="Copiar resultado">
+                    <svg class="i i-copy"><use href="#i-copy"/></svg>
+                    <svg class="i i-done"><use href="#i-check"/></svg>
+                </button>
+            </div>
 
-        <div class="results-bar">
-            <p>Clique nos <b>5 campeões que cada time jogou</b> (de qualquer rota) para marcar os 10 jogados.</p>
-
-            <div class="actions">
-                <span class="progress">
+            <div class="dock-played">
+                <span class="progress" title="Clique nos 5 campeões que cada time jogou">
+                    <span class="progress-text" id="progressText">0/10</span>
                     <span class="bar"><i id="progressBar"></i></span>
-                    <span id="progressText">0/10</span>
                 </span>
-                <button class="btn btn-ok" id="markPlayed" type="button">✅ Marcar partida como jogada</button>
+                <button class="btn btn-line" id="markPlayed" type="button" title="Bloqueia os 10 campeões marcados para os próximos sorteios">
+                    <svg class="i"><use href="#i-ban"/></svg><span>Bloquear jogados</span>
+                </button>
+            </div>
+
+            <button class="btn btn-quiet pool-btn" id="openPool" type="button" title="Campeões fora da roleta">
+                <svg class="i grid-i"><use href="#i-grid"/></svg>
+                <span>Bloqueados</span>
+                <span class="pill" id="poolBtnCount">0</span>
+                <svg class="i warn-i"><use href="#i-alert"/></svg>
+            </button>
+        </div>
+    </main>
+
+    <!-- ===================== RANKING ===================== -->
+    <main class="view" id="view-rank" hidden>
+        <div class="rank-head">
+            <h1>Ranking</h1>
+            <p class="muted" id="rankInfo">Carregando...</p>
+            <button class="icon-btn" id="refreshRank" type="button" title="Atualizar">
+                <svg class="i"><use href="#i-refresh"/></svg>
+            </button>
+
+            <div class="rank-admin admin-only">
+                <button class="btn btn-quiet" type="button" data-admin-tab="tabPlayers">
+                    <svg class="i"><use href="#i-users"/></svg><span>Jogadores</span>
+                </button>
+                <button class="btn btn-line" type="button" data-admin-tab="tabMatch">
+                    <svg class="i"><use href="#i-plus"/></svg><span>Registrar partida</span>
+                </button>
             </div>
         </div>
 
-        <div class="grid" id="results">
-            <section class="card team blue">
-                <h2>Time 1</h2>
-                <div class="empty">Clique em “Sortear”</div>
-            </section>
-
-            <section class="card team red">
-                <h2>Time 2</h2>
-                <div class="empty">Clique em “Sortear”</div>
-            </section>
-        </div>
-
-        <section class="pool-section">
-            <h2 class="section-title">Campeões bloqueados</h2>
-
-            <div class="pool-head">
-                <p>
-                    <b>Arraste</b> um campeão para <b>Bloqueados</b> para tirá-lo da roleta
-                    (ou dê <b>duplo clique</b>). Arraste de volta para liberar.
-                </p>
-                <div class="lanecounts" id="laneCounts" title="Campeões disponíveis por rota (mínimo 6)"></div>
+        <div class="rank-layout">
+            <div class="rank-wrap">
+                <table class="rank">
+                    <thead>
+                        <tr>
+                            <th class="pos">#</th>
+                            <th>Jogador</th>
+                            <th class="num">Rating</th>
+                            <th class="num">Jogos</th>
+                            <th class="num hide-sm">V</th>
+                            <th class="num hide-sm">D</th>
+                            <th class="num">Win%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankBody"></tbody>
+                </table>
+                <p class="footnote" id="rankNote"></p>
             </div>
+
+            <aside class="history-wrap">
+                <h2>Últimas partidas</h2>
+                <div class="history" id="history"></div>
+            </aside>
+        </div>
+    </main>
+
+    <datalist id="playerSuggestions"></datalist>
+
+    <!-- ===================== GAVETA: BLOQUEADOS ===================== -->
+    <dialog class="drawer drawer-wide" id="poolDrawer" aria-labelledby="poolTitle">
+        <div class="drawer-inner">
+            <div class="drawer-head">
+                <h2 id="poolTitle">Campeões</h2>
+                <div class="lanecounts" id="laneCounts" title="Disponíveis por rota (o sorteio precisa de 6)"></div>
+                <button class="icon-btn" type="button" data-close title="Fechar"><svg class="i"><use href="#i-x"/></svg></button>
+            </div>
+
+            <p class="drawer-hint">Arraste entre as listas, dê duplo clique ou use o botão do campeão.</p>
 
             <div class="dnd">
                 <div class="box" id="availBox" data-zone="avail">
@@ -222,10 +216,10 @@
                         <h3>Disponíveis <span class="count" id="availCount">0</span></h3>
                     </div>
 
-                    <div class="search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                        <input type="search" id="searchAvail" placeholder="Pesquisar campeão...">
-                    </div>
+                    <label class="search">
+                        <svg class="i"><use href="#i-search"/></svg>
+                        <input type="search" id="searchAvail" placeholder="Pesquisar">
+                    </label>
 
                     <div class="seg" id="laneFilter">
                         <button type="button" data-lane="" class="active">Todas</button>
@@ -242,22 +236,115 @@
                 <div class="box blocked" id="blockBox" data-zone="block">
                     <div class="box-head">
                         <h3>Bloqueados <span class="count" id="blockCount">0</span></h3>
-                        <button id="clearPlayed" type="button" class="btn btn-danger">Limpar tudo</button>
+                        <button id="clearPlayed" type="button" class="btn btn-quiet btn-sm danger">Liberar todos</button>
                     </div>
 
-                    <div class="search">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                        <input type="search" id="searchBlock" placeholder="Pesquisar bloqueado...">
-                    </div>
+                    <label class="search">
+                        <svg class="i"><use href="#i-search"/></svg>
+                        <input type="search" id="searchBlock" placeholder="Pesquisar">
+                    </label>
 
-                    <div class="list" id="blockList" style="height: 404px"></div>
+                    <div class="list" id="blockList"></div>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </dialog>
+
+    <!-- ===================== GAVETA: ADMIN ===================== -->
+    <dialog class="drawer" id="adminDrawer" aria-labelledby="adminTitle">
+        <div class="drawer-inner" id="adminPanel">
+            <div class="drawer-head">
+                <h2 id="adminTitle">Admin</h2>
+                <div class="seg" id="adminTabs">
+                    <button type="button" data-tab="tabMatch" class="active">Registrar partida</button>
+                    <button type="button" data-tab="tabPlayers">Jogadores</button>
+                </div>
+                <button class="icon-btn" type="button" data-close title="Fechar"><svg class="i"><use href="#i-x"/></svg></button>
+            </div>
+
+            <!-- Partida manual -->
+            <form class="admin-tab manual" id="tabMatch" autocomplete="off">
+                <div class="manual-teams">
+                    <fieldset class="mteam blue">
+                        <legend>Time azul</legend>
+                        <div class="manual-list" id="manualTeam1"></div>
+                    </fieldset>
+                    <fieldset class="mteam red">
+                        <legend>Time vermelho</legend>
+                        <div class="manual-list" id="manualTeam2"></div>
+                    </fieldset>
+                </div>
+
+                <div class="manual-foot">
+                    <div class="field">
+                        <label for="manualWinner">Vencedor</label>
+                        <select id="manualWinner">
+                            <option value="">Escolha</option>
+                            <option value="1">Time azul</option>
+                            <option value="2">Time vermelho</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="manualDate">Data e hora</label>
+                        <input type="datetime-local" id="manualDate">
+                    </div>
+                </div>
+
+                <p class="line-status" id="manualStatus" role="status"></p>
+
+                <div class="drawer-foot">
+                    <button class="btn btn-quiet" id="manualFromDraw" type="button" title="Preenche com os times do sorteio de jogadores">
+                        <svg class="i"><use href="#i-import"/></svg><span>Usar times do sorteio</span>
+                    </button>
+                    <button class="btn btn-primary" type="submit">Registrar partida</button>
+                </div>
+            </form>
+
+            <!-- Jogadores -->
+            <div class="admin-tab" id="tabPlayers" hidden>
+                <form class="roster-add" id="rosterAdd">
+                    <input type="text" id="rosterNew" maxlength="200" autocomplete="off"
+                           placeholder="Link do op.gg ou nick">
+                    <button class="btn btn-primary" type="submit"><svg class="i"><use href="#i-plus"/></svg><span>Adicionar</span></button>
+                </form>
+
+                <p class="line-status" id="rosterStatus" role="status"></p>
+
+                <label class="search">
+                    <svg class="i"><use href="#i-search"/></svg>
+                    <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido">
+                </label>
+
+                <div class="roster" id="rosterList"></div>
+            </div>
+
+            <div class="drawer-exit">
+                <button class="btn btn-quiet" id="adminExit" type="button">
+                    <svg class="i"><use href="#i-exit"/></svg><span>Sair do modo admin</span>
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- ===================== MODAL DE CONFIRMAÇÃO ===================== -->
+    <dialog class="modal" id="askDialog" aria-labelledby="askTitle">
+        <form class="modal-inner" id="askForm" method="dialog">
+            <h2 id="askTitle"></h2>
+            <div class="modal-text" id="askText"></div>
+            <input type="text" id="askInput" autocomplete="off">
+            <div class="modal-actions">
+                <button class="btn btn-quiet" id="askCancel" type="button">Cancelar</button>
+                <button class="btn btn-primary" id="askOk" type="submit">Confirmar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Avisos (toast) -->
+    <div class="toast" id="status" role="status" aria-live="polite"></div>
 
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/champions.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/pool.js"></script>

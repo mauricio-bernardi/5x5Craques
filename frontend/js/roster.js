@@ -169,9 +169,7 @@ async function refreshRoster() {
 
 // Mensagens começando com ⚠️ aparecem em destaque vermelho.
 function rosterStatus(text) {
-    const el = $('rosterStatus');
-    el.textContent = text;
-    el.classList.toggle('error', text.startsWith('⚠️'));
+    setLine('rosterStatus', text);
 }
 
 // Executa uma função protegida por senha e recarrega tudo (ranking e histórico usam os nomes oficiais).
@@ -234,7 +232,7 @@ function renderRoster() {
     if (!shown.length) {
         box.append(cell('p', roster.length
             ? 'Nenhum jogador encontrado.'
-            : 'Nenhum jogador cadastrado ainda. Cole um link do op.gg acima.', 'none'));
+            : 'Nenhum jogador cadastrado. Cole um link do op.gg acima.', 'none'));
         return;
     }
 
@@ -269,8 +267,8 @@ function rosterRow(p) {
         title.textContent = p.name;
     }
 
-    const summary = s ? `${Math.round(s.rating)} · ${s.games} jogo${s.games === 1 ? '' : 's'}` : 'sem jogos';
-    info.append(title, cell('small', summary + (p.opgg_url ? '' : ' · sem op.gg')));
+    const summary = s ? `${Math.round(s.rating)}, ${s.games} jogo${s.games === 1 ? '' : 's'}` : 'sem jogos';
+    info.append(title, cell('small', summary + (p.opgg_url ? '' : ', sem op.gg')));
 
     // Apelidos.
     const aliases = document.createElement('div');
@@ -320,24 +318,18 @@ function rosterRow(p) {
     const actions = document.createElement('div');
     actions.className = 'roster-actions';
 
-    const edit = cell('button', '✏️', 'btn btn-ghost btn-sm');
-    edit.type = 'button';
-    edit.title = 'Trocar o link do op.gg ou o nick (o nick antigo vira apelido)';
+    const edit = iconButton('pencil', 'Trocar o link do op.gg ou o nick (o nick antigo vira apelido)');
     edit.addEventListener('click', () => editPlayer(p));
 
-    const merge = cell('button', '🔀', 'btn btn-ghost btn-sm');
-    merge.type = 'button';
-    merge.title = 'Juntar com outro jogador (mesma pessoa cadastrada duas vezes)';
+    const merge = iconButton('merge', 'Juntar com outro jogador (mesma pessoa cadastrada duas vezes)');
     merge.addEventListener('click', () => mergePlayer(p));
 
     actions.append(edit, merge);
 
     if (!s) {
-        const del = cell('button', '🗑️', 'btn btn-danger btn-sm');
-        del.type = 'button';
-        del.title = 'Excluir (só para quem ainda não jogou)';
-        del.addEventListener('click', () => {
-            if (confirm(`Excluir "${p.name}" e os apelidos dele?`)) {
+        const del = iconButton('trash', 'Excluir (só para quem ainda não jogou)', 'danger');
+        del.addEventListener('click', async () => {
+            if (await ask({ title: `Excluir ${p.name}?`, text: 'Os apelidos também serão apagados.', ok: 'Excluir', danger: true })) {
                 rosterAction('delete_player', { p_player_id: p.id }, `🗑️ ${p.name} excluído.`);
             }
         });
@@ -350,12 +342,13 @@ function rosterRow(p) {
 }
 
 // ---------- Ações ----------
-function editPlayer(p) {
-    const text = prompt(
-        `Novo link do op.gg de "${p.name}" (ou só um novo nick).\n` +
-        `Se o nick mudar, "${p.name}" continua valendo como apelido.`,
-        p.opgg_url || p.name
-    );
+async function editPlayer(p) {
+    const text = await ask({
+        title: `Editar ${p.name}`,
+        text: `Link do op.gg ou novo nick. Se o nick mudar, "${p.name}" continua valendo como apelido.`,
+        input: { value: p.opgg_url || p.name },
+        ok: 'Salvar'
+    });
 
     if (text === null) return;
 
@@ -374,12 +367,13 @@ function editPlayer(p) {
     rosterAction('update_player', { p_player_id: p.id, p_new_name: input.name, p_opgg_url: url }, msg);
 }
 
-function mergePlayer(p) {
-    const answer = (prompt(
-        `"${p.name}" é a mesma pessoa que qual jogador?\n` +
-        `Digite o nick de quem vai continuar. As partidas de "${p.name}" passam para ele ` +
-        `e "${p.name}" vira apelido.`
-    ) || '').trim();
+async function mergePlayer(p) {
+    const answer = (await ask({
+        title: `Juntar ${p.name} com...`,
+        text: `Nick de quem continua. As partidas de "${p.name}" passam para ele e "${p.name}" vira apelido.`,
+        input: { placeholder: 'Nick do outro jogador' },
+        ok: 'Continuar'
+    }) || '').trim();
 
     if (!answer) return;
 
@@ -395,7 +389,12 @@ function mergePlayer(p) {
         return;
     }
 
-    if (!confirm(`Juntar "${p.name}" em "${target.name}"?\n\nO ranking será recalculado e isso não pode ser desfeito automaticamente.`)) {
+    if (!await ask({
+        title: `Juntar ${p.name} em ${target.name}?`,
+        text: 'O ranking será recalculado. Não dá para desfazer automaticamente.',
+        ok: 'Juntar',
+        danger: true
+    })) {
         return;
     }
 
