@@ -1,7 +1,9 @@
 // Sorteio de campeões por rota e marcação dos campeões jogados.
 
+const PICKS_PER_TEAM = 5;
+
 let last = null;
-let selected = {};
+let selected = [new Set(), new Set()]; // campeões jogados por time (qualquer rota, até 5 cada)
 let registered = false;
 
 function draw() {
@@ -54,7 +56,7 @@ function draw() {
         }
 
         last = teams;
-        selected = {};
+        selected = [new Set(), new Set()];
         registered = false;
 
         render();
@@ -68,7 +70,7 @@ function draw() {
 }
 
 function selectedCount() {
-    return Object.values(selected).filter(Boolean).length;
+    return selected[0].size + selected[1].size;
 }
 
 function updateProgress() {
@@ -76,7 +78,21 @@ function updateProgress() {
 
     $('progressText').textContent = registered ? 'Registrada' : `${n}/10`;
     $('progressBar').style.width = (registered ? 100 : n * 10) + '%';
-    $('markPlayed').disabled = !last || registered || n !== 10;
+    $('markPlayed').disabled = !last || registered ||
+        selected.some(s => s.size !== PICKS_PER_TEAM);
+}
+
+// Atualiza os botões de um time: marcado, ou apagado quando o time já tem 5.
+function paintTeam(section, i) {
+    const full = selected[i].size >= PICKS_PER_TEAM;
+
+    for (const c of section.querySelectorAll('.champ')) {
+        const sel = selected[i].has(c.title);
+
+        c.classList.toggle('selected', sel);
+        c.classList.toggle('dim', full && !sel);
+        c.setAttribute('aria-pressed', String(sel));
+    }
 }
 
 function render() {
@@ -106,17 +122,11 @@ function render() {
             const champions = document.createElement('div');
             champions.className = 'champions';
 
-            const key = i + '-' + lane;
-
             for (const name of team[lane]) {
                 const cell = document.createElement('button');
-                const isSel = selected[key] === name;
 
                 cell.type = 'button';
-                cell.className =
-                    'champ' +
-                    (isSel ? ' selected' : '') +
-                    (selected[key] && !isSel ? ' dim' : '');
+                cell.className = 'champ';
 
                 const nm = document.createElement('span');
                 nm.className = 'name';
@@ -124,7 +134,6 @@ function render() {
 
                 cell.title = name;
                 cell.append(portrait(name), nm);
-                cell.setAttribute('aria-pressed', String(isSel));
 
                 cell.addEventListener('click', () => {
                     if (registered) {
@@ -133,22 +142,24 @@ function render() {
                         return;
                     }
 
-                    selected[key] =
-                        selected[key] === name ? undefined : name;
+                    const picks = selected[i];
 
-                    // Atualiza só os 3 botões desta rota, sem redesenhar tudo.
-                    for (const c of champions.children) {
-                        const sel = selected[key] === c.title;
-
-                        c.classList.toggle('selected', sel);
-                        c.classList.toggle('dim', !!selected[key] && !sel);
-                        c.setAttribute('aria-pressed', String(sel));
+                    if (picks.has(name)) {
+                        picks.delete(name);
+                    } else if (picks.size >= PICKS_PER_TEAM) {
+                        $('status').textContent =
+                            `⚠️ ${teamTitle(i)} já tem ${PICKS_PER_TEAM} campeões. Desmarque um para trocar.`;
+                        return;
+                    } else {
+                        picks.add(name);
                     }
 
+                    paintTeam(section, i);
                     updateProgress();
 
                     $('status').textContent =
-                        `🎮 ${selectedCount()}/10 campeões selecionados.`;
+                        `🎮 ${teamTitle(0)}: ${selected[0].size}/${PICKS_PER_TEAM} · ` +
+                        `${teamTitle(1)}: ${selected[1].size}/${PICKS_PER_TEAM}`;
                 });
 
                 champions.append(cell);
@@ -158,6 +169,7 @@ function render() {
             section.append(row);
         }
 
+        paintTeam(section, i);
         host.append(section);
     });
 
@@ -217,21 +229,16 @@ $('markPlayed').addEventListener('click', () => {
         return;
     }
 
-    const names = [];
+    const short = [0, 1].find(i => selected[i].size !== PICKS_PER_TEAM);
 
-    for (let i = 0; i < 2; i++) {
-        for (const lane of lanes) {
-            const name = selected[i + '-' + lane];
-
-            if (!name) {
-                $('status').textContent =
-                    '⚠️ Selecione exatamente 1 campeão por rota em cada time (10 no total).';
-                return;
-            }
-
-            names.push(name);
-        }
+    if (short !== undefined) {
+        $('status').textContent =
+            `⚠️ Selecione ${PICKS_PER_TEAM} campeões em cada time (de qualquer rota). ` +
+            `${teamTitle(short)} está com ${selected[short].size}.`;
+        return;
     }
+
+    const names = [...selected[0], ...selected[1]];
 
     const before = blocked.size;
 
