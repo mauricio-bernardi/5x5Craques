@@ -87,29 +87,73 @@
                     <p id="rankInfo">Carregando...</p>
                     <div class="actions">
                         <button class="btn btn-ghost" id="refreshRank" type="button">🔄 Atualizar</button>
-                        <button class="btn btn-primary" id="rosterToggle" type="button">➕ Adicionar jogador</button>
+                        <button class="btn btn-primary" id="adminToggle" type="button">🔓 Modo admin</button>
                     </div>
                 </div>
 
-                <!-- Painel de cadastro: só abre depois de digitar a senha do grupo. -->
-                <div class="roster-panel" id="rosterPanel" hidden>
-                    <form class="roster-add" id="rosterAdd">
-                        <input type="text" id="rosterNew" maxlength="200" autocomplete="off"
-                               placeholder="Cole o link do op.gg (ex.: https://op.gg/lol/summoners/br/Nick-BR1) ou digite o nick">
-                        <button class="btn btn-primary" type="submit">Adicionar</button>
-                    </form>
-
-                    <p class="roster-status" id="rosterStatus" role="status"></p>
-
-                    <div class="roster-tools">
-                        <h3 class="history-title">Jogadores cadastrados</h3>
-                        <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
+                <!-- Painel de admin: só aparece depois de digitar a senha do grupo (vale até fechar/recarregar a página). -->
+                <div class="admin-panel" id="adminPanel" hidden>
+                    <div class="admin-head">
+                        <b>🛠️ Modo admin ativo</b>
+                        <span class="sub">Excluir partidas também está liberado no histórico. A senha vale até fechar ou recarregar a página.</span>
                     </div>
 
-                    <div class="roster" id="rosterList"></div>
+                    <div class="seg" id="adminTabs">
+                        <button type="button" data-tab="tabMatch" class="active">⚔️ Registrar partida</button>
+                        <button type="button" data-tab="tabPlayers">👥 Jogadores</button>
+                    </div>
 
-                    <div class="roster-foot">
-                        <button class="btn btn-ghost btn-sm" id="rosterLock" type="button">🔒 Bloquear edição neste navegador</button>
+                    <!-- Partida manual -->
+                    <form class="admin-tab manual" id="tabMatch" autocomplete="off">
+                        <div class="manual-teams">
+                            <fieldset class="pteam blue">
+                                <legend>🔵 Time Azul</legend>
+                                <div class="manual-list" id="manualTeam1"></div>
+                            </fieldset>
+                            <fieldset class="pteam red">
+                                <legend>🔴 Time Vermelho</legend>
+                                <div class="manual-list" id="manualTeam2"></div>
+                            </fieldset>
+                        </div>
+
+                        <div class="manual-foot">
+                            <div class="field">
+                                <label for="manualWinner">Vencedor</label>
+                                <select id="manualWinner">
+                                    <option value="">Escolha...</option>
+                                    <option value="1">🔵 Time Azul</option>
+                                    <option value="2">🔴 Time Vermelho</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label for="manualDate">Data e hora da partida</label>
+                                <input type="datetime-local" id="manualDate">
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-ghost" id="manualFromDraw" type="button" title="Preenche com os times do sorteio de jogadores">⤵ Usar times do sorteio</button>
+                                <button class="btn btn-primary" type="submit">Registrar partida</button>
+                            </div>
+                        </div>
+
+                        <p class="roster-status" id="manualStatus" role="status"></p>
+                    </form>
+
+                    <!-- Jogadores -->
+                    <div class="admin-tab" id="tabPlayers" hidden>
+                        <form class="roster-add" id="rosterAdd">
+                            <input type="text" id="rosterNew" maxlength="200" autocomplete="off"
+                                   placeholder="Cole o link do op.gg (ex.: https://op.gg/lol/summoners/br/Nick-BR1) ou digite o nick">
+                            <button class="btn btn-primary" type="submit">Adicionar</button>
+                        </form>
+
+                        <p class="roster-status" id="rosterStatus" role="status"></p>
+
+                        <div class="roster-tools">
+                            <h3 class="history-title">Jogadores cadastrados</h3>
+                            <input type="search" id="rosterSearch" placeholder="Pesquisar jogador ou apelido...">
+                        </div>
+
+                        <div class="roster" id="rosterList"></div>
                     </div>
                 </div>
 
@@ -219,6 +263,7 @@
     <script src="js/pool.js"></script>
     <script src="js/api.js"></script>
     <script src="js/roster.js"></script>
+    <script src="js/admin.js"></script>
     <script src="js/rating.js"></script>
     <script src="js/players.js"></script>
     <script src="js/ranking.js"></script>

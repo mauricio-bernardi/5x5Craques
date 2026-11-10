@@ -119,9 +119,18 @@ revoke execute on function check_secret(text) from public, anon, authenticated;
 revoke execute on function find_player(text) from public, anon, authenticated;
 
 -- ---------- Funções da API (todas pedem a senha do grupo) ----------
+-- Versão antiga, sem data (substituída pela de baixo, que aceita a data da partida).
+drop function if exists register_match(text, text[], text[], int);
+
 -- Registra uma partida. Cada nome é procurado pelo nome oficial e pelos apelidos;
--- quem não for encontrado vira um jogador novo.
-create or replace function register_match(p_secret text, p_team1 text[], p_team2 text[], p_winner int)
+-- quem não for encontrado vira um jogador novo. Sem data, usa o momento atual.
+create or replace function register_match(
+    p_secret    text,
+    p_team1     text[],
+    p_team2     text[],
+    p_winner    int,
+    p_played_at timestamptz default null
+)
 returns bigint
 language plpgsql
 security definer
@@ -143,7 +152,12 @@ begin
         raise exception 'vencedor inválido';
     end if;
 
-    insert into matches (winner) values (p_winner) returning id into v_match;
+    if p_played_at > now() + interval '1 hour' then
+        raise exception 'a data da partida está no futuro';
+    end if;
+
+    insert into matches (winner, played_at) values (p_winner, coalesce(p_played_at, now()))
+    returning id into v_match;
 
     for v_team in 1..2 loop
         foreach v_name in array (case when v_team = 1 then p_team1 else p_team2 end) loop
@@ -364,7 +378,7 @@ begin
 end;
 $$;
 
-revoke execute on function register_match(text, text[], text[], int) from public;
+revoke execute on function register_match(text, text[], text[], int, timestamptz) from public;
 revoke execute on function delete_match(text, bigint) from public;
 revoke execute on function verify_secret(text) from public;
 revoke execute on function add_player(text, text, text) from public;
@@ -374,7 +388,7 @@ revoke execute on function update_player(text, bigint, text, text) from public;
 revoke execute on function merge_players(text, bigint, bigint) from public;
 revoke execute on function delete_player(text, bigint) from public;
 
-grant execute on function register_match(text, text[], text[], int) to anon, authenticated;
+grant execute on function register_match(text, text[], text[], int, timestamptz) to anon, authenticated;
 grant execute on function delete_match(text, bigint) to anon, authenticated;
 grant execute on function verify_secret(text) to anon, authenticated;
 grant execute on function add_player(text, text, text) to anon, authenticated;

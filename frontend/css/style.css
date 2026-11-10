@@ -117,7 +117,7 @@ h1 {
 .field.blue label { color: #7cbcff; }
 .field.red label { color: #ff8f9a; }
 
-input[type=text], input[type=search], select, textarea {
+input[type=text], input[type=search], input[type=datetime-local], select, textarea {
     width: 100%;
     background: #0a101d;
     color: var(--text);
@@ -816,13 +816,59 @@ table.rank {
     margin-bottom: 10px;
 }
 
-.roster-panel {
+/* ---------- Modo admin ---------- */
+body:not(.admin) .admin-only { display: none !important; }
+
+.admin-panel {
     margin: 0 0 20px;
     padding: 16px;
     border-radius: 12px;
     border: 1px solid #c8aa6e44;
     background: linear-gradient(180deg, #c8aa6e0d, transparent);
 }
+
+.admin-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 12px;
+    margin-bottom: 14px;
+}
+
+.admin-head b { color: var(--gold-hi); font-size: 14px; }
+
+.manual-teams {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.manual fieldset {
+    margin: 0;
+    min-width: 0;
+}
+
+.manual legend {
+    padding: 0 6px;
+    font-family: Cinzel, Georgia, serif;
+    font-size: 15px;
+    letter-spacing: 1px;
+}
+
+.manual .pteam.blue legend { color: #8cc6ff; }
+.manual .pteam.red legend { color: #ff9aa4; }
+
+.manual-list { display: grid; gap: 8px; }
+
+.manual-foot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+    margin: 14px 0 10px;
+}
+
+.manual-foot .actions { flex-wrap: wrap; }
 
 .roster-tools {
     display: flex;
@@ -978,6 +1024,7 @@ input.alias-input {
     .player-teams { grid-template-columns: 1fr; }
     .vs { text-align: center; }
     .roster-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .manual-teams, .manual-foot { grid-template-columns: 1fr; }
     .roster-row .aliases { grid-column: 1 / -1; grid-row: 2; }
 }
 

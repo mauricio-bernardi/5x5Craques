@@ -19,6 +19,7 @@ Roleta de campeões de LoL para 2 times, com sorteio/balanceamento de jogadores 
         ├── pool.js       # campeões bloqueados (arrastar e soltar)
         ├── api.js        # chamadas ao Supabase
         ├── roster.js     # cadastro de jogadores e apelidos (nicks)
+        ├── admin.js      # modo admin: senha, partida manual
         ├── rating.js     # Elo e balanceamento dos times
         ├── players.js    # sorteio de jogadores e registro de resultado
         ├── ranking.js    # tabela de ranking e histórico
@@ -46,11 +47,19 @@ O site é publicado no GitHub Pages por `.github/workflows/pages.yml`, que envia
 `frontend/` como raiz do site (o link não tem `/frontend/`). Cada `git push` na `main` atualiza o
 site em ~1 minuto. Em **Settings → Pages**, o *Source* precisa estar em **GitHub Actions**.
 
-## Jogadores e apelidos
+## Modo admin
 
-A seção **Jogadores** é visível para todos, mas só dá para editar depois de clicar em
-**🔓 Desbloquear edição** e digitar a senha do grupo (fica lembrada naquele navegador até clicar em
-**🔒 Bloquear**).
+O botão **🔓 Modo admin** (no card do Ranking) pede a senha do grupo e libera:
+
+- **⚔️ Registrar partida**: escolher os 10 jogadores, o vencedor e a data/hora (para lançar jogos antigos);
+  o botão **⤵ Usar times do sorteio** preenche com os times sorteados.
+- **👥 Jogadores**: cadastro e edição (veja abaixo).
+- **Excluir** partidas no histórico (fora do modo admin o botão nem aparece).
+
+A senha fica só na memória da página: fechar, recarregar ou abrir outra aba pede de novo.
+Registrar o resultado pelos botões do sorteio também pede a senha se o modo admin não estiver ativo.
+
+## Jogadores e apelidos
 
 - **Cadastrar**: cole o link do perfil no op.gg (ex.: `https://op.gg/lol/summoners/br/Nick-BR1`);
   o nick é extraído do link. Também dá para digitar só o nick.

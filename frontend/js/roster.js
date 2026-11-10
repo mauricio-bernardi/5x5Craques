@@ -6,7 +6,6 @@ let roster = [];             // [{ id, name, opgg_url, aliases: [{ id, alias }] 
 let nameIndex = new Map();   // nome oficial ou apelido normalizado -> jogador
 let looseIndex = new Map();  // mesmo, ignorando acentos/espaços/símbolos -> jogador (null se ambíguo)
 let rosterLoaded = false;
-let rosterUnlocked = false;
 
 // ---------- Busca de jogadores ----------
 // Acha o jogador pelo nome oficial ou apelido. Se não achar exato, tenta ignorando
@@ -217,82 +216,12 @@ function opggFree(url, player) {
     return true;
 }
 
-// ---------- Botão "Adicionar jogador" (pede a senha) ----------
-function storedSecret() {
-    try { return localStorage.getItem(secretKey); } catch (e) { return null; }
-}
-
-async function secretIsValid(secret) {
-    try {
-        await api('rpc/verify_secret', { method: 'POST', body: JSON.stringify({ p_secret: secret }) });
-        return true;
-    } catch (err) {
-        if (/senha/i.test(err.message)) return false;
-        throw err;
-    }
-}
-
-function setPanelOpen(open) {
-    $('rosterPanel').hidden = !open;
-    $('rosterToggle').textContent = open ? '✖ Fechar' : '➕ Adicionar jogador';
-
-    if (open) {
-        renderRoster();
-        $('rosterNew').focus();
-    }
-}
-
-$('rosterToggle').addEventListener('click', async () => {
-    if (!$('rosterPanel').hidden) {
-        setPanelOpen(false);
-        return;
-    }
-
-    if (!backendOn()) {
-        alert('Configure o Supabase em js/config.js para cadastrar jogadores.');
-        return;
-    }
-
-    try {
-        // Quem já digitou a senha neste navegador não precisa digitar de novo.
-        if (!rosterUnlocked) {
-            const saved = storedSecret();
-
-            if (saved && await secretIsValid(saved)) {
-                rosterUnlocked = true;
-            } else {
-                const secret = prompt('Senha do grupo para adicionar jogadores:');
-                if (!secret) return;
-
-                if (!await secretIsValid(secret)) {
-                    alert('Senha errada.');
-                    return;
-                }
-
-                try { localStorage.setItem(secretKey, secret); } catch (e) {}
-                rosterUnlocked = true;
-            }
-        }
-
-        rosterStatus('');
-        setPanelOpen(true);
-    } catch (err) {
-        alert('Não foi possível verificar a senha: ' + err.message);
-    }
-});
-
-$('rosterLock').addEventListener('click', () => {
-    try { localStorage.removeItem(secretKey); } catch (e) {}
-    rosterUnlocked = false;
-    setPanelOpen(false);
-});
-
-// ---------- Lista (dentro do painel) ----------
+// ---------- Lista (aba "Jogadores" do modo admin) ----------
 function renderRoster() {
     const box = $('rosterList');
     box.replaceChildren();
 
-    if ($('rosterPanel').hidden) return;
+    if (!adminSecret) return;
 
     if (!rosterLoaded) return;
 
@@ -305,7 +234,7 @@ function renderRoster() {
     if (!shown.length) {
         box.append(cell('p', roster.length
             ? 'Nenhum jogador encontrado.'
-            : 'Nenhum jogador cadastrado ainda.' + (rosterUnlocked ? ' Cole um link do op.gg acima.' : ''), 'none'));
+            : 'Nenhum jogador cadastrado ainda. Cole um link do op.gg acima.', 'none'));
         return;
     }
 
@@ -341,9 +270,9 @@ function rosterRow(p) {
     }
 
     const summary = s ? `${Math.round(s.rating)} · ${s.games} jogo${s.games === 1 ? '' : 's'}` : 'sem jogos';
-    info.append(title, cell('small', summary + (p.opgg_url || !rosterUnlocked ? '' : ' · sem op.gg')));
+    info.append(title, cell('small', summary + (p.opgg_url ? '' : ' · sem op.gg')));
 
-    // Apelidos (só dá para mexer com a edição liberada).
+    // Apelidos.
     const aliases = document.createElement('div');
     aliases.className = 'aliases';
 
@@ -351,26 +280,19 @@ function rosterRow(p) {
         const chip = document.createElement('span');
         chip.className = 'alias';
         chip.title = 'Apelido: também é reconhecido no sorteio';
-        chip.append(cell('span', a.alias));
 
-        if (rosterUnlocked) {
-            const del = cell('button', '×');
-            del.type = 'button';
-            del.title = `Remover o apelido "${a.alias}"`;
-            del.addEventListener('click', () => {
-                rosterAction('remove_alias', { p_alias_id: a.id }, `🗑️ Apelido "${a.alias}" removido de ${p.name}.`);
-            });
-            chip.append(del);
-        } else {
-            chip.style.paddingRight = '10px';
-        }
+        const del = cell('button', '×');
+        del.type = 'button';
+        del.title = `Remover o apelido "${a.alias}"`;
+        del.addEventListener('click', () => {
+            rosterAction('remove_alias', { p_alias_id: a.id }, `🗑️ Apelido "${a.alias}" removido de ${p.name}.`);
+        });
 
+        chip.append(cell('span', a.alias), del);
         aliases.append(chip);
     }
 
     row.append(info, aliases);
-
-    if (!rosterUnlocked) return row;
 
     const input = document.createElement('input');
     input.type = 'text';

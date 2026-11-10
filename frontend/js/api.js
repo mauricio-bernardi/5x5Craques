@@ -33,37 +33,57 @@ async function fetchMatches() {
     }
 }
 
-function getSecret(ask) {
-    let s = null;
+// ---------- Modo admin ----------
+// A senha do grupo fica só na memória desta página: fechar, recarregar ou abrir outra aba pede de novo.
+let adminSecret = null;
 
-    try { s = localStorage.getItem(secretKey); } catch (e) {}
+// Versões antigas guardavam a senha no navegador; apaga o que tiver sobrado.
+try { localStorage.removeItem(secretKey); } catch (e) {}
 
-    if (!s || ask) {
-        s = prompt('Senha do grupo (a mesma definida no script SQL do Supabase):');
-
-        if (!s) return null;
-
-        try { localStorage.setItem(secretKey, s); } catch (e) {}
+async function secretIsValid(secret) {
+    try {
+        await api('rpc/verify_secret', { method: 'POST', body: JSON.stringify({ p_secret: secret }) });
+        return true;
+    } catch (err) {
+        if (/senha/i.test(err.message)) return false;
+        throw err;
     }
-
-    return s;
 }
 
-// Chama uma função protegida; se a senha guardada estiver errada, pede de novo uma vez.
+// Pede a senha e liga o modo admin. Devolve true se deu certo.
+async function requestAdmin() {
+    if (adminSecret) return true;
+
+    const secret = prompt('Senha do grupo para entrar no modo admin:');
+    if (!secret) return false;
+
+    if (!await secretIsValid(secret)) {
+        alert('Senha errada.');
+        return false;
+    }
+
+    adminSecret = secret;
+    setAdminMode(true);
+    return true;
+}
+
+function exitAdmin() {
+    adminSecret = null;
+    setAdminMode(false);
+}
+
+// Chama uma função protegida. Fora do modo admin, pede a senha antes.
 async function rpc(fn, args) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-        const secret = getSecret(attempt > 0);
+    if (!await requestAdmin()) throw Error('Operação cancelada (sem senha).');
 
-        if (!secret) throw Error('Operação cancelada (sem senha).');
-
-        try {
-            return await api('rpc/' + fn, {
-                method: 'POST',
-                body: JSON.stringify({ p_secret: secret, ...args })
-            });
-        } catch (err) {
-            if (attempt === 0 && /senha/i.test(err.message)) continue;
-            throw err;
-        }
+    try {
+        return await api('rpc/' + fn, {
+            method: 'POST',
+            body: JSON.stringify({ p_secret: adminSecret, ...args })
+        });
+    } catch (err) {
+        // A senha mudou no banco enquanto a página estava aberta.
+        if (/senha inválida/i.test(err.message)) exitAdmin();
+        throw err;
     }
 }

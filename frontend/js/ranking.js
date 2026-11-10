@@ -92,7 +92,7 @@ function renderRanking() {
             teams.append(side);
         });
 
-        const del = cell('button', 'Excluir', 'btn btn-danger');
+        const del = cell('button', 'Excluir', 'btn btn-danger admin-only');
         del.type = 'button';
         del.title = 'Excluir esta partida (registrada por engano)';
         del.addEventListener('click', () => deleteMatch(m, date));
