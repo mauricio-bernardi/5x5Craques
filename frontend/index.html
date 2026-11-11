@@ -47,6 +47,7 @@
         <nav class="views" id="viewNav" aria-label="Seções">
             <button type="button" data-view="match" class="active">Partida</button>
             <button type="button" data-view="rank">Ranking</button>
+            <button type="button" data-view="arena">Areninha</button>
         </nav>
 
         <button class="icon-btn admin-btn" id="adminToggle" type="button" title="Modo admin" aria-pressed="false">
@@ -193,6 +194,42 @@
             <aside class="history-wrap">
                 <h2>Últimas partidas</h2>
                 <div class="history" id="history"></div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- ===================== ARENINHA ===================== -->
+    <main class="view" id="view-arena" hidden>
+        <div class="rank-head">
+            <h1>Areninha</h1>
+            <p class="muted" id="arenaInfo">Carregando...</p>
+            <button class="icon-btn" id="refreshArena" type="button" title="Atualizar">
+                <svg class="i"><use href="#i-refresh"/></svg>
+            </button>
+        </div>
+
+        <div class="rank-layout">
+            <div class="rank-wrap">
+                <table class="rank">
+                    <thead>
+                        <tr>
+                            <th class="pos">#</th>
+                            <th>Jogador</th>
+                            <th class="num">Pontos</th>
+                            <th class="num">Arenas</th>
+                            <th class="num hide-sm" title="Vezes em 1º lugar">1º</th>
+                            <th class="num hide-sm" title="Colocação média">Média</th>
+                            <th class="num" title="Última colocação">Última</th>
+                        </tr>
+                    </thead>
+                    <tbody id="arenaBody"></tbody>
+                </table>
+                <p class="footnote" id="arenaNote"></p>
+            </div>
+
+            <aside class="history-wrap">
+                <h2>Últimas Arenas</h2>
+                <div class="history" id="arenaHistory"></div>
             </aside>
         </div>
     </main>
@@ -354,6 +391,7 @@
     <script src="js/rating.js"></script>
     <script src="js/players.js"></script>
     <script src="js/ranking.js"></script>
+    <script src="js/arena.js"></script>
     <script src="js/draft.js"></script>
     <script src="js/main.js"></script>
 </body>

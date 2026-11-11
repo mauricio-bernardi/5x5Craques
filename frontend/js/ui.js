@@ -230,18 +230,23 @@ function showView(name) {
         b.setAttribute('aria-current', b.dataset.view === name ? 'page' : 'false');
     }
 
-    $('view-match').hidden = name !== 'match';
-    $('view-rank').hidden = name !== 'rank';
+    for (const v of VIEWS) $('view-' + v).hidden = name !== v;
     document.body.dataset.view = name;
 
-    const hash = name === 'rank' ? '#ranking' : '';
+    const hash = VIEW_HASH[name] || '';
     // window.history: rating.js tem uma variável global chamada "history".
     if (location.hash !== hash) window.history.replaceState(null, '', hash || location.pathname + location.search);
+
+    // Avisa quem precisa carregar dados ao abrir a vista (ex.: Areninha).
+    document.dispatchEvent(new CustomEvent('viewchange', { detail: name }));
 }
+
+const VIEWS = ['match', 'rank', 'arena'];
+const VIEW_HASH = { rank: '#ranking', arena: '#areninha' };
 
 $('viewNav').addEventListener('click', e => {
     const b = e.target.closest('button');
     if (b) showView(b.dataset.view);
 });
 
-showView(location.hash === '#ranking' ? 'rank' : 'match');
+showView(Object.keys(VIEW_HASH).find(v => VIEW_HASH[v] === location.hash) || 'match');

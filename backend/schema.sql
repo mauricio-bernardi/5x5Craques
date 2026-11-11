@@ -350,6 +350,11 @@ begin
     update match_players  set player_id = p_into where player_id = p_from;
     update player_aliases set player_id = p_into where player_id = p_from;
 
+    -- Arenas também passam para quem fica (se os dois estiverem na mesma Arena, vale a de quem fica).
+    update arena_results set player_id = p_into
+    where player_id = p_from
+      and match_id not in (select match_id from arena_results where player_id = p_into);
+
     delete from players where id = p_from;
 
     insert into player_aliases (player_id, alias) values (p_into, v_from_name);
@@ -366,7 +371,8 @@ as $$
 begin
     perform check_secret(p_secret);
 
-    if exists (select 1 from match_players where player_id = p_player_id) then
+    if exists (select 1 from match_players where player_id = p_player_id)
+       or exists (select 1 from arena_results where player_id = p_player_id) then
         raise exception 'este jogador já tem partidas; para tirá-lo da lista, junte-o com outro jogador';
     end if;
 
@@ -397,6 +403,179 @@ grant execute on function remove_alias(text, bigint) to anon, authenticated;
 grant execute on function update_player(text, bigint, text, text) to anon, authenticated;
 grant execute on function merge_players(text, bigint, bigint) to anon, authenticated;
 grant execute on function delete_player(text, bigint) to anon, authenticated;
+
+-- =====================================================================
+-- Areninha: ranking das partidas de Arena (importadas da API da Riot pelo
+-- robô scripts/arena-sync.mjs, que roda no GitHub Actions).
+-- =====================================================================
+
+-- PUUID: código fixo da conta na Riot (não muda quando o jogador troca de nick).
+-- puuid_source guarda o Riot ID de onde ele veio, para saber quando reconsultar.
+alter table players add column if not exists puuid text;
+alter table players add column if not exists puuid_source text;
+create unique index if not exists players_puuid_key on players (puuid);
+
+create table if not exists arena_games (
+    match_id   text primary key check (match_id ~ '^[A-Z0-9]+_[0-9]+$'),
+    played_at  timestamptz not null,
+    duration_s int not null default 0,
+    counted    boolean not null default true,   -- false = admin tirou da conta (ou partida inválida)
+    synced_at  timestamptz not null default now()
+);
+
+create table if not exists arena_results (
+    match_id  text not null references arena_games (match_id) on delete cascade,
+    player_id bigint not null references players (id) on delete cascade,
+    placement int not null check (placement between 1 and 8),
+    champion  text check (length(champion) <= 40),
+    primary key (match_id, player_id)
+);
+
+create index if not exists arena_results_player_idx on arena_results (player_id);
+create index if not exists arena_games_played_idx on arena_games (played_at);
+
+-- Pontos por colocação. Mudar aqui recalcula todo o ranking.
+create or replace function arena_points(p_placement int)
+returns int
+language sql
+immutable
+as $$
+    select case p_placement
+        when 1 then 30 when 2 then 20 when 3 then 10
+        when 4 then -10 when 5 then -20 when 6 then -30
+        else 0
+    end;
+$$;
+
+-- Ranking: todos os cadastrados, começando com 1000.
+create or replace view arena_ranking with (security_invoker = true) as
+with r as (
+    select ar.player_id, ar.placement, g.played_at
+    from arena_results ar
+    join arena_games g on g.match_id = ar.match_id
+    where g.counted
+)
+select p.id as player_id,
+       p.name,
+       p.opgg_url,
+       (1000 + coalesce(sum(arena_points(r.placement)), 0))::int as points,
+       count(r.placement)::int as games,
+       (count(*) filter (where r.placement = 1))::int as firsts,
+       round(avg(r.placement), 2) as avg_placement,
+       (array_agg(r.placement order by r.played_at desc) filter (where r.placement is not null))[1] as last_placement,
+       max(r.played_at) as last_played
+from players p
+left join r on r.player_id = p.id
+group by p.id;
+
+-- Partidas com os cadastrados que jogaram cada uma.
+create or replace view arena_history with (security_invoker = true) as
+select g.match_id,
+       g.played_at,
+       g.duration_s,
+       g.counted,
+       jsonb_agg(jsonb_build_object(
+           'name', p.name,
+           'placement', ar.placement,
+           'champion', ar.champion,
+           'points', arena_points(ar.placement)
+       ) order by ar.placement, p.name) as players
+from arena_games g
+join arena_results ar on ar.match_id = g.match_id
+join players p on p.id = ar.player_id
+group by g.match_id;
+
+alter table arena_games   enable row level security;
+alter table arena_results enable row level security;
+
+drop policy if exists "leitura publica" on arena_games;
+drop policy if exists "leitura publica" on arena_results;
+
+create policy "leitura publica" on arena_games   for select to anon, authenticated using (true);
+create policy "leitura publica" on arena_results for select to anon, authenticated using (true);
+
+revoke all on arena_games, arena_results, arena_ranking, arena_history from anon, authenticated;
+grant select on arena_games, arena_results, arena_ranking, arena_history to anon, authenticated;
+
+-- Robô: guarda o PUUID de um jogador.
+create or replace function arena_set_puuid(p_secret text, p_player_id bigint, p_puuid text, p_source text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    perform check_secret(p_secret);
+
+    if p_puuid !~ '^[A-Za-z0-9_-]{40,100}$' then
+        raise exception 'puuid inválido';
+    end if;
+
+    update players set puuid = p_puuid, puuid_source = p_source where id = p_player_id;
+
+    if not found then
+        raise exception 'jogador não encontrado';
+    end if;
+end;
+$$;
+
+-- Robô: grava uma partida e as colocações dos cadastrados. Rodar de novo não duplica.
+-- p_results: [{ "player_id": 1, "placement": 3, "champion": "Ahri" }, ...]
+create or replace function arena_ingest(
+    p_secret    text,
+    p_match_id  text,
+    p_played_at timestamptz,
+    p_duration  int,
+    p_counted   boolean,
+    p_results   jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+    v jsonb;
+begin
+    perform check_secret(p_secret);
+
+    insert into arena_games (match_id, played_at, duration_s, counted)
+    values (p_match_id, p_played_at, coalesce(p_duration, 0), coalesce(p_counted, true))
+    on conflict (match_id) do nothing;
+
+    for v in select * from jsonb_array_elements(coalesce(p_results, '[]'::jsonb)) loop
+        insert into arena_results (match_id, player_id, placement, champion)
+        values (p_match_id, (v->>'player_id')::bigint, (v->>'placement')::int, left(v->>'champion', 40))
+        on conflict (match_id, player_id) do nothing;
+    end loop;
+end;
+$$;
+
+-- Admin: tira uma partida da conta (ou devolve).
+create or replace function arena_set_counted(p_secret text, p_match_id text, p_counted boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    perform check_secret(p_secret);
+
+    update arena_games set counted = p_counted where match_id = p_match_id;
+
+    if not found then
+        raise exception 'partida não encontrada';
+    end if;
+end;
+$$;
+
+revoke execute on function arena_set_puuid(text, bigint, text, text) from public;
+revoke execute on function arena_ingest(text, text, timestamptz, int, boolean, jsonb) from public;
+revoke execute on function arena_set_counted(text, text, boolean) from public;
+
+grant execute on function arena_set_puuid(text, bigint, text, text) to anon, authenticated;
+grant execute on function arena_ingest(text, text, timestamptz, int, boolean, jsonb) to anon, authenticated;
+grant execute on function arena_set_counted(text, text, boolean) to anon, authenticated;
 
 -- ---------- Senha do grupo (só na primeira vez) ----------
 -- Troque TROQUE_ESTA_SENHA no editor do Supabase antes de rodar pela primeira vez.

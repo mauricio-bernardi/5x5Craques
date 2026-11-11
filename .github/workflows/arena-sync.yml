@@ -1,0 +1,36 @@
+# Robô da Areninha: a cada 15 minutos importa as Arenas novas dos jogadores cadastrados.
+# Segredos necessários (Settings -> Secrets and variables -> Actions):
+#   RIOT_API_KEY    chave da API da Riot
+#   GROUP_PASSWORD  senha do grupo (a mesma do modo admin)
+name: Areninha
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: arena-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Importar Arenas
+        run: node scripts/arena-sync.mjs
+        env:
+          RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+          GROUP_PASSWORD: ${{ secrets.GROUP_PASSWORD }}
+          SUPABASE_URL: https://csmddsfprddhhzzohssm.supabase.co
+          SUPABASE_KEY: sb_publishable_WUdVFDaPBdFy6LvLFY57xg_4fUJWIbp
+          ARENA_START: '2026-11-11T00:00:00-03:00'
+          ARENA_QUEUES: '1750'

@@ -728,6 +728,58 @@ table.rank { width: 100%; border-collapse: collapse; }
 .match-row .icon-btn .i { width: 16px; height: 16px; }
 
 /* ==========================================================================
+   Areninha
+   ========================================================================== */
+:root { --gain: #8cc79a; }
+
+.place-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    margin-left: 6px;
+    border-radius: 50%;
+    vertical-align: middle;
+    background: var(--danger);
+}
+
+.place-dot.up { background: var(--gain); }
+
+.arena-players { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.arena-line {
+    display: grid;
+    grid-template-columns: 26px 22px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.arena-line .place { font: 600 14px var(--display); color: var(--faint); }
+.arena-line .place.first { color: var(--accent); }
+.arena-line .place.up { color: var(--text); }
+
+.arena-row .pic {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    font-size: 9px;
+}
+
+.arena-line .who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.arena-line .pts {
+    font: 500 14px var(--display);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--danger);
+}
+
+.arena-line .pts.up { color: var(--gain); }
+
+.arena-row.off .arena-players { opacity: .45; }
+.arena-row.off .pts { color: var(--faint); }
+
+.off-tag { color: var(--faint); font-size: 12px; }
+
+/* ==========================================================================
    Diálogos: gavetas e modal
    ========================================================================== */
 dialog {
@@ -1175,11 +1227,19 @@ body[data-view=rank] .toast { bottom: 24px; }
     .lanecounts { order: 3; width: 100%; justify-content: space-between; }
 }
 
+/* Três abas no topo: em celular o logo fica só "5x5" e as abas mais juntas. */
+@media (max-width: 440px) {
+    .topbar { padding: 0 4px 0 14px; gap: 4px; }
+    .brand { font-size: 0; }
+    .brand b { font-size: 20px; }
+    .views { gap: 0; }
+    .views button { padding: 0 8px; font-size: 14px; }
+}
+
 @media (max-width: 400px) {
     .pic { width: 40px; height: 40px; }
     .champ .name { font-size: 10px; }
     .mark { top: 0; left: calc(50% + 10px); }
-    .brand { font-size: 19px; }
     .manual-teams, .manual-foot { grid-template-columns: 1fr; }
 }
 
