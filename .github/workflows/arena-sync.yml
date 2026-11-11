@@ -39,4 +39,6 @@ jobs:
           SUPABASE_URL: https://csmddsfprddhhzzohssm.supabase.co
           SUPABASE_KEY: sb_publishable_WUdVFDaPBdFy6LvLFY57xg_4fUJWIbp
           ARENA_START: '2026-11-01T00:00:00-03:00'
-          ARENA_QUEUES: '1750'
+          # Filas de Arena: 1750 (com Bravura) e 1740 (pausa de quarta) apareceram em 11/2026;
+          # 1700/1710 são filas antigas de Arena, mantidas por garantia.
+          ARENA_QUEUES: '1700,1710,1740,1750'

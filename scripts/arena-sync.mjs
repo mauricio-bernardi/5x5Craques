@@ -6,7 +6,7 @@
 //   GROUP_PASSWORD  senha do grupo, a mesma do modo admin (segredo do GitHub)
 //   SUPABASE_URL, SUPABASE_KEY  mesmos valores de frontend/js/config.js (públicos)
 //   ARENA_START     data a partir da qual as Arenas contam (ISO, ex.: 2026-11-11T00:00:00-03:00)
-//   ARENA_QUEUES    filas de Arena na API da Riot, separadas por vírgula (padrão: 1750)
+//   ARENA_QUEUES    filas de Arena na API da Riot, separadas por vírgula (padrão: 1700,1710,1740,1750)
 //   DRY_RUN=1       só mostra o que faria, sem gravar nada
 
 const env = process.env;
@@ -21,7 +21,7 @@ if (!DRY && !env.GROUP_PASSWORD) throw new Error('Falta a variável GROUP_PASSWO
 
 const RIOT = 'https://americas.api.riotgames.com';   // contas e partidas do BR ficam em "americas"
 const START = Math.floor(Date.parse(env.ARENA_START) / 1000);
-const QUEUES = (env.ARENA_QUEUES || '1750').split(',').map(q => q.trim()).filter(Boolean);
+const QUEUES = (env.ARENA_QUEUES || '1700,1710,1740,1750').split(',').map(q => q.trim()).filter(Boolean);
 const MIN_DURATION_S = 5 * 60;                        // menos que isso: partida inválida, não conta
 
 if (!Number.isFinite(START)) throw new Error('ARENA_START inválida: ' + env.ARENA_START);
