@@ -133,8 +133,12 @@ const fresh = new Set();
 
 for (const p of byPuuid.values()) {
     for (const queue of QUEUES) {
-        const ids = await riot(`/lol/match/v5/matches/by-puuid/${p.puuid}/ids?startTime=${START}&queue=${queue}&count=100`) || [];
-        for (const id of ids) if (!known.has(id)) fresh.add(id);
+        // A Riot devolve no máximo 100 por vez: pagina até acabar (quem joga muito passa disso).
+        for (let offset = 0; ; offset += 100) {
+            const ids = await riot(`/lol/match/v5/matches/by-puuid/${p.puuid}/ids?startTime=${START}&queue=${queue}&start=${offset}&count=100`) || [];
+            for (const id of ids) if (!known.has(id)) fresh.add(id);
+            if (ids.length < 100) break;
+        }
     }
 }
 

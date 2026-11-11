@@ -8,6 +8,12 @@ on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
+  # Roda na hora quando o robô ou esta configuração mudam (ex.: nova data de início).
+  push:
+    branches: [main]
+    paths:
+      - scripts/arena-sync.mjs
+      - .github/workflows/arena-sync.yml
 
 permissions:
   contents: read
@@ -32,5 +38,5 @@ jobs:
           GROUP_PASSWORD: ${{ secrets.GROUP_PASSWORD }}
           SUPABASE_URL: https://csmddsfprddhhzzohssm.supabase.co
           SUPABASE_KEY: sb_publishable_WUdVFDaPBdFy6LvLFY57xg_4fUJWIbp
-          ARENA_START: '2026-11-11T00:00:00-03:00'
+          ARENA_START: '2026-11-01T00:00:00-03:00'
           ARENA_QUEUES: '1750'

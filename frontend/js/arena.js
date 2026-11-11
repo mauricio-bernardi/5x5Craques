@@ -1,7 +1,7 @@
 // Areninha: ranking das partidas de Arena, importadas da API da Riot pelo robô
 // (scripts/arena-sync.mjs, a cada 15 min). Aqui só se lê o que está no banco.
 
-const ARENA_START_LABEL = '11/11';
+const ARENA_START_LABEL = '01/11';
 const ARENA_RECENT = 15;
 
 let arenaLoadedAt = 0;
