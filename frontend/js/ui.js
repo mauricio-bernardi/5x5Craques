@@ -241,8 +241,8 @@ function showView(name) {
     document.dispatchEvent(new CustomEvent('viewchange', { detail: name }));
 }
 
-const VIEWS = ['match', 'rank', 'arena'];
-const VIEW_HASH = { rank: '#ranking', arena: '#areninha' };
+const VIEWS = ['match', 'rank', 'arena', 'resenha'];
+const VIEW_HASH = { rank: '#ranking', arena: '#areninha', resenha: '#resenhometro' };
 
 $('viewNav').addEventListener('click', e => {
     const b = e.target.closest('button');

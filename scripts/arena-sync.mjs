@@ -1,6 +1,10 @@
 // Robô da Areninha: importa as partidas de Arena dos jogadores cadastrados (API da Riot)
 // e grava as colocações no Supabase. Roda no GitHub Actions (.github/workflows/arena-sync.yml).
 //
+// Importa as Arenas desde ARENA_START (ranking) e, uma vez por jogador, as últimas 100
+// Arenas dele (histórico do Resenhômetro). O histórico é grande: cada execução busca no
+// máximo MAX_DETAILS partidas e a próxima continua de onde parou.
+//
 // Variáveis de ambiente:
 //   RIOT_API_KEY    chave da API da Riot (segredo do GitHub)
 //   GROUP_PASSWORD  senha do grupo, a mesma do modo admin (segredo do GitHub)
@@ -23,6 +27,8 @@ const RIOT = 'https://americas.api.riotgames.com';   // contas e partidas do BR 
 const START = Math.floor(Date.parse(env.ARENA_START) / 1000);
 const QUEUES = (env.ARENA_QUEUES || '1700,1710,1740,1750').split(',').map(q => q.trim()).filter(Boolean);
 const MIN_DURATION_S = 5 * 60;                        // menos que isso: partida inválida, não conta
+const HISTORY = 100;                                  // últimas N Arenas de cada jogador
+const MAX_DETAILS = Number(env.MAX_DETAILS) || 250;   // partidas por execução (~1,3 s cada)
 
 if (!Number.isFinite(START)) throw new Error('ARENA_START inválida: ' + env.ARENA_START);
 
@@ -93,7 +99,7 @@ function riotIdFromOpgg(url) {
 }
 
 // ---------- Execução ----------
-const players = await sb('players?select=id,name,opgg_url,puuid,puuid_source');
+const players = await sb('players?select=id,name,opgg_url,puuid,puuid_source,arena_backfill_at');
 console.log(`${players.length} jogadores cadastrados. Contando Arenas desde ${new Date(START * 1000).toISOString()}${DRY ? ' (DRY_RUN)' : ''}.`);
 
 // 1. PUUID de cada jogador (só consulta a Riot quando o link do op.gg mudou).
@@ -117,6 +123,7 @@ for (const p of players) {
 
     try {
         if (!DRY) await rpc('arena_set_puuid', { p_player_id: p.id, p_puuid: acc.puuid, p_source: source });
+        if (p.puuid !== acc.puuid) p.arena_backfill_at = null;   // conta nova: importa o histórico de novo
         p.puuid = acc.puuid;
         console.log(`- ${p.name}: PUUID ${p.puuid_source ? 'atualizado' : 'encontrado'} (${source})`);
     } catch (err) {
@@ -126,30 +133,55 @@ for (const p of players) {
 
 const byPuuid = new Map(players.filter(p => p.puuid).map(p => [p.puuid, p]));
 
-// 2. Partidas de Arena de cada um desde o início, que ainda não estão no banco.
-const since = new Date(START * 1000).toISOString();
-const known = new Set((await sb(`arena_games?select=match_id&played_at=gte.${encodeURIComponent(since)}`)).map(g => g.match_id));
+// 2. Partidas de Arena de cada um que ainda não estão no banco.
+// O Supabase devolve no máximo 1000 linhas por vez: pagina.
+const known = new Set();
+for (let offset = 0; ; offset += 1000) {
+    const rows = await sb(`arena_games?select=match_id&order=match_id&limit=1000&offset=${offset}`);
+    for (const g of rows) known.add(g.match_id);
+    if (rows.length < 1000) break;
+}
+
 const fresh = new Set();
+const backfill = new Map();   // jogador -> ids das últimas 100 Arenas (só quem ainda não tem histórico)
+const idNum = id => Number(id.split('_')[1]) || 0;   // ids da Riot crescem com o tempo
 
 for (const p of byPuuid.values()) {
     for (const queue of QUEUES) {
-        // A Riot devolve no máximo 100 por vez: pagina até acabar (quem joga muito passa disso).
+        // Temporada: a Riot devolve no máximo 100 por vez, pagina até acabar.
         for (let offset = 0; ; offset += 100) {
             const ids = await riot(`/lol/match/v5/matches/by-puuid/${p.puuid}/ids?startTime=${START}&queue=${queue}&start=${offset}&count=100`) || [];
             for (const id of ids) if (!known.has(id)) fresh.add(id);
             if (ids.length < 100) break;
         }
     }
+
+    if (p.arena_backfill_at) continue;
+
+    // Histórico: as últimas 100 Arenas, somando todas as filas.
+    let ids = [];
+    for (const queue of QUEUES) {
+        ids.push(...(await riot(`/lol/match/v5/matches/by-puuid/${p.puuid}/ids?queue=${queue}&start=0&count=${HISTORY}`) || []));
+    }
+    ids = [...new Set(ids)].sort((a, b) => idNum(b) - idNum(a)).slice(0, HISTORY);
+
+    backfill.set(p, ids);
+    for (const id of ids) if (!known.has(id)) fresh.add(id);
 }
 
-console.log(`${fresh.size} partida(s) nova(s) de Arena.`);
+// Mais novas primeiro: as Arenas de agora aparecem logo, o histórico vem aos poucos.
+const pending = [...fresh].sort((a, b) => idNum(b) - idNum(a));
+const todo = pending.slice(0, MAX_DETAILS);
+
+console.log(`${fresh.size} partida(s) nova(s) de Arena${pending.length > todo.length ? `; ${todo.length} nesta execução, o resto na próxima` : ''}.`);
 
 // 3. Detalhes de cada partida nova: colocação dos cadastrados.
 let saved = 0;
+const done = new Set(known);
 
-for (const matchId of fresh) {
+for (const matchId of todo) {
     const m = await riot(`/lol/match/v5/matches/${matchId}`);
-    if (!m) continue;
+    if (!m) { done.add(matchId); continue; }
 
     const info = m.info;
     const valid = info.gameMode === 'CHERRY' &&
@@ -175,7 +207,20 @@ for (const matchId of fresh) {
         });
     }
 
+    done.add(matchId);
     saved++;
+}
+
+// 4. Quem já tem as últimas 100 Arenas no banco não precisa buscar o histórico de novo.
+for (const [p, ids] of backfill) {
+    const missing = ids.filter(id => !done.has(id)).length;
+
+    if (missing) {
+        console.log(`- ${p.name}: histórico importando, faltam ${missing} partida(s).`);
+    } else {
+        if (!DRY) await rpc('arena_backfill_done', { p_player_id: p.id });
+        console.log(`- ${p.name}: histórico completo (${ids.length} Arenas).`);
+    }
 }
 
 console.log(`Pronto: ${saved} partida(s) ${DRY ? 'encontrada(s)' : 'gravada(s)'}.`);

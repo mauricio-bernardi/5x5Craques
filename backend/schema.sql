@@ -372,7 +372,8 @@ begin
     perform check_secret(p_secret);
 
     if exists (select 1 from match_players where player_id = p_player_id)
-       or exists (select 1 from arena_results where player_id = p_player_id) then
+       or exists (select 1 from arena_results ar join arena_games g on g.match_id = ar.match_id
+                  where ar.player_id = p_player_id and g.played_at >= arena_season_start()) then
         raise exception 'este jogador já tem partidas; para tirá-lo da lista, junte-o com outro jogador';
     end if;
 
@@ -414,6 +415,8 @@ grant execute on function delete_player(text, bigint) to anon, authenticated;
 alter table players add column if not exists puuid text;
 alter table players add column if not exists puuid_source text;
 create unique index if not exists players_puuid_key on players (puuid);
+-- Quando o robô já importou as últimas 100 Arenas do jogador (histórico do Resenhômetro).
+alter table players add column if not exists arena_backfill_at timestamptz;
 
 create table if not exists arena_games (
     match_id   text primary key check (match_id ~ '^[A-Z0-9]+_[0-9]+$'),
@@ -434,6 +437,15 @@ create table if not exists arena_results (
 create index if not exists arena_results_player_idx on arena_results (player_id);
 create index if not exists arena_games_played_idx on arena_games (played_at);
 
+-- Início da temporada: o ranking só conta Arenas a partir daqui. As mais antigas
+-- (últimas 100 de cada jogador) ficam no banco só para o Resenhômetro.
+-- Precisa bater com ARENA_START em .github/workflows/arena-sync.yml.
+create or replace function arena_season_start()
+returns timestamptz
+language sql
+immutable
+as $$ select timestamptz '2026-11-01 00:00:00-03' $$;
+
 -- Pontos por colocação. Mudar aqui recalcula todo o ranking.
 create or replace function arena_points(p_placement int)
 returns int
@@ -453,7 +465,7 @@ with r as (
     select ar.player_id, ar.placement, g.played_at
     from arena_results ar
     join arena_games g on g.match_id = ar.match_id
-    where g.counted
+    where g.counted and g.played_at >= arena_season_start()
 )
 select p.id as player_id,
        p.name,
@@ -483,7 +495,20 @@ select g.match_id,
 from arena_games g
 join arena_results ar on ar.match_id = g.match_id
 join players p on p.id = ar.player_id
+where g.played_at >= arena_season_start()
 group by g.match_id;
+
+-- Resenhômetro: cada time de cada Arena (com todo o histórico importado).
+-- Na Arena os parceiros de time têm a mesma colocação, então time = partida + colocação.
+create or replace view arena_teams with (security_invoker = true) as
+select g.match_id,
+       g.played_at,
+       ar.placement,
+       array_agg(ar.player_id order by ar.player_id) as players
+from arena_games g
+join arena_results ar on ar.match_id = g.match_id
+where g.counted
+group by g.match_id, g.played_at, ar.placement;
 
 alter table arena_games   enable row level security;
 alter table arena_results enable row level security;
@@ -494,8 +519,8 @@ drop policy if exists "leitura publica" on arena_results;
 create policy "leitura publica" on arena_games   for select to anon, authenticated using (true);
 create policy "leitura publica" on arena_results for select to anon, authenticated using (true);
 
-revoke all on arena_games, arena_results, arena_ranking, arena_history from anon, authenticated;
-grant select on arena_games, arena_results, arena_ranking, arena_history to anon, authenticated;
+revoke all on arena_games, arena_results, arena_ranking, arena_history, arena_teams from anon, authenticated;
+grant select on arena_games, arena_results, arena_ranking, arena_history, arena_teams to anon, authenticated;
 
 -- Robô: guarda o PUUID de um jogador.
 create or replace function arena_set_puuid(p_secret text, p_player_id bigint, p_puuid text, p_source text)
@@ -511,7 +536,12 @@ begin
         raise exception 'puuid inválido';
     end if;
 
-    update players set puuid = p_puuid, puuid_source = p_source where id = p_player_id;
+    -- Conta diferente: o histórico precisa ser importado de novo.
+    update players
+       set arena_backfill_at = case when puuid is distinct from p_puuid then null else arena_backfill_at end,
+           puuid = p_puuid,
+           puuid_source = p_source
+     where id = p_player_id;
 
     if not found then
         raise exception 'jogador não encontrado';
@@ -551,6 +581,19 @@ begin
 end;
 $$;
 
+-- Robô: marca que as últimas 100 Arenas do jogador já foram importadas.
+create or replace function arena_backfill_done(p_secret text, p_player_id bigint)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    perform check_secret(p_secret);
+    update players set arena_backfill_at = now() where id = p_player_id;
+end;
+$$;
+
 -- Admin: tira uma partida da conta (ou devolve).
 create or replace function arena_set_counted(p_secret text, p_match_id text, p_counted boolean)
 returns void
@@ -572,10 +615,12 @@ $$;
 revoke execute on function arena_set_puuid(text, bigint, text, text) from public;
 revoke execute on function arena_ingest(text, text, timestamptz, int, boolean, jsonb) from public;
 revoke execute on function arena_set_counted(text, text, boolean) from public;
+revoke execute on function arena_backfill_done(text, bigint) from public;
 
 grant execute on function arena_set_puuid(text, bigint, text, text) to anon, authenticated;
 grant execute on function arena_ingest(text, text, timestamptz, int, boolean, jsonb) to anon, authenticated;
 grant execute on function arena_set_counted(text, text, boolean) to anon, authenticated;
+grant execute on function arena_backfill_done(text, bigint) to anon, authenticated;
 
 -- ---------- Senha do grupo (só na primeira vez) ----------
 -- Troque TROQUE_ESTA_SENHA no editor do Supabase antes de rodar pela primeira vez.

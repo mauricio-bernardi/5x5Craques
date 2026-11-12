@@ -48,6 +48,7 @@
             <button type="button" data-view="match" class="active">Partida</button>
             <button type="button" data-view="rank">Ranking</button>
             <button type="button" data-view="arena">Areninha</button>
+            <button type="button" data-view="resenha">Resenhômetro</button>
         </nav>
 
         <button class="icon-btn admin-btn" id="adminToggle" type="button" title="Modo admin" aria-pressed="false">
@@ -234,6 +235,42 @@
         </div>
     </main>
 
+    <main class="view" id="view-resenha" hidden>
+        <div class="rank-head">
+            <h1>Resenhômetro</h1>
+            <p class="muted">De 1 a 100, quanto esse trio se dá bem na Arena.</p>
+        </div>
+
+        <div class="resenha">
+            <div class="trio-pick">
+                <select id="trio0" aria-label="Jogador 1"></select>
+                <select id="trio1" aria-label="Jogador 2"></select>
+                <select id="trio2" aria-label="Jogador 3"></select>
+                <button class="icon-btn" id="trioShuffle" type="button" title="Sortear um trio">
+                    <svg class="i"><use href="#i-shuffle"/></svg>
+                </button>
+            </div>
+
+            <div class="gauge-card">
+                <svg class="gauge" id="gauge" viewBox="0 0 220 124" aria-hidden="true">
+                    <path class="track" d="M 22 110 A 88 88 0 0 1 198 110"/>
+                    <g id="needle">
+                        <path class="needle" d="M 106.5 110 L 110 32 L 113.5 110 Z"/>
+                        <circle class="hub" cx="110" cy="110" r="8"/>
+                    </g>
+                </svg>
+                <div class="gauge-value" aria-live="polite"><span id="resenhaScore">–</span><small>/100</small></div>
+                <p class="gauge-label" id="resenhaLabel"></p>
+                <p class="sub" id="resenhaBasis">Escolha 3 jogadores.</p>
+            </div>
+
+            <div class="rs-details" id="resenhaDetails"></div>
+
+            <p class="footnote">Conta as últimas 100 Arenas de cada um. Pesa mais quando os três caem no mesmo time,
+                depois as duplas do trio, e por último a fase de cada um sozinho.</p>
+        </div>
+    </main>
+
     <datalist id="playerSuggestions"></datalist>
 
     <!-- ===================== GAVETA: BLOQUEADOS ===================== -->
@@ -392,6 +429,7 @@
     <script src="js/players.js"></script>
     <script src="js/ranking.js"></script>
     <script src="js/arena.js"></script>
+    <script src="js/resenha.js"></script>
     <script src="js/draft.js"></script>
     <script src="js/main.js"></script>
 </body>

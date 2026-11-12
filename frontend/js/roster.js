@@ -156,6 +156,7 @@ async function refreshRoster() {
     }
 
     buildIndexes();
+    document.dispatchEvent(new Event('rosterchange'));
 
     // Sugestões ao digitar nos campos do sorteio.
     $('playerSuggestions').replaceChildren(...roster.map(p => {
