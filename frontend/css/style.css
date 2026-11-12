@@ -1251,6 +1251,38 @@ body[data-view=rank] .toast { bottom: 24px; }
 
 .resenha .footnote { margin-top: 16px; }
 
+.rs-top-btn { margin-top: 10px; gap: 6px; }
+.rs-top-btn .i { width: 16px; height: 16px; }
+
+.rs-top {
+    display: grid; gap: 2px;
+    margin-top: 10px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+}
+
+.rs-top > .sub { margin: 6px 8px; color: var(--muted); font-size: 13px; }
+
+.rs-top-item {
+    display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0; border-radius: var(--r);
+    background: none;
+    text-align: left;
+    transition: background .15s;
+}
+
+.rs-top-item:hover { background: var(--raise); }
+.rs-top-pos { font: 600 16px var(--display); color: var(--faint); }
+.rs-top-item:first-child .rs-top-pos { color: var(--accent); }
+.rs-top-text { display: flex; flex-direction: column; min-width: 0; font-size: 14px; }
+.rs-top-text .rs-name { flex: none; }
+.rs-top-text .rs-meta { font-size: 12px; }
+.rs-top-score { font: 700 26px/1 var(--display); font-variant-numeric: tabular-nums; }
+
 /* ==========================================================================
    Telas menores
    ========================================================================== */
