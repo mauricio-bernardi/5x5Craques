@@ -1,5 +1,6 @@
 // Resenhômetro: escolhe 3 jogadores e mede de 1 a 100 a "resenha" do trio na Arena,
 // pelas colocações das Arenas que jogaram juntos (o robô importa as últimas 100 de cada um).
+// Quanto pior o trio vai, mais resenha: 100 = só toma pau junto, 1 = tryhard que só ganha.
 //
 // Conta, do mais forte para o mais fraco:
 //   - Arenas dos três no mesmo time (peso 1)
@@ -12,8 +13,8 @@ const PAIR_WEIGHT = 0.5;
 const RESENHA_KEY = 'resenhaTrio';
 
 const RESENHA_TIERS = [
-    { max: 20, label: 'Climão total' },
-    { max: 40, label: 'Treta à vista' },
+    { max: 20, label: 'Tryhard total' },
+    { max: 40, label: 'Sério demais' },
     { max: 60, label: 'Morna' },
     { max: 80, label: 'Resenha boa' },
     { max: 100, label: 'Resenha lendária' }
@@ -183,7 +184,8 @@ function scoreTrio(ids, rows) {
 
     const value = (sum + RESENHA_PRIOR * prior) / (weight + RESENHA_PRIOR);
 
-    return { score: Math.round(1 + 99 * value), trio, pairs, solo };
+    // Invertido: colocação ruim = mais resenha.
+    return { score: Math.round(1 + 99 * (1 - value)), trio, pairs, solo };
 }
 
 async function measureTrio() {
