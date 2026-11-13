@@ -55,7 +55,7 @@ function renderArena(ranking, games) {
         : `Nenhuma Arena desde ${ARENA_START_LABEL}`;
 
     $('arenaNote').textContent =
-        'Todos começam com 1000. 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30. Atualiza sozinho a cada 15 min.';
+        'Todos começam com 0. 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30. Atualiza sozinho a cada 15 min.';
 
     // ---------- Tabela ----------
     const body = $('arenaBody');
@@ -89,7 +89,7 @@ function renderArena(ranking, games) {
         tr.append(
             has ? cell('td', i + 1, 'pos') : cell('td', '–', 'pos new'),
             nameCell,
-            cell('td', p.points, 'num rating'),
+            cell('td', signed(p.points), 'num rating'),
             cell('td', p.games, 'num'),
             cell('td', has ? p.firsts : '–', 'num'),
             cell('td', has ? Number(p.avg_placement).toFixed(1) : '–', 'num'),

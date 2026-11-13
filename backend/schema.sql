@@ -459,7 +459,7 @@ as $$
     end;
 $$;
 
--- Ranking: todos os cadastrados, começando com 1000.
+-- Ranking: todos os cadastrados, começando com 0 (quem perde mais do que ganha fica negativo).
 create or replace view arena_ranking with (security_invoker = true) as
 with r as (
     select ar.player_id, ar.placement, g.played_at
@@ -470,7 +470,7 @@ with r as (
 select p.id as player_id,
        p.name,
        p.opgg_url,
-       (1000 + coalesce(sum(arena_points(r.placement)), 0))::int as points,
+       coalesce(sum(arena_points(r.placement)), 0)::int as points,
        count(r.placement)::int as games,
        (count(*) filter (where r.placement = 1))::int as firsts,
        round(avg(r.placement), 2) as avg_placement,
