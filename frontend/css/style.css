@@ -805,6 +805,19 @@ table.rank { width: 100%; border-collapse: collapse; }
     opacity: 1;
 }
 
+.elo-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -6px -8px -4px 0; }
+
+.elo-table { display: grid; }
+
+.elo-line {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.elo-line .elo { margin-left: 0; }
+.elo-range { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+
 .arena-row.off .arena-players { opacity: .45; }
 .arena-row.off .pts { color: var(--faint); }
 

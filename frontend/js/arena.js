@@ -34,6 +34,36 @@ function eloTag(elo) {
     return tag;
 }
 
+let challengerCut = null;   // pontos do 3º colocado, quando ele já é Grão-Mestre
+
+// Janela de info: os elos e quantos pontos vale cada um (montada a partir de ELOS).
+function showEloInfo() {
+    const rows = [...ELOS].reverse().map((e, i, list) => {
+        const next = list[i + 1];
+        const range = e.min === -Infinity ? 'abaixo de 0'
+            : next ? `${e.min} a ${next.min - 1}` : `${e.min} ou mais`;
+        return [e, range];
+    });
+
+    const gm = ELOS[0].min;
+    rows.push([CHALLENGER, `top ${CHALLENGER_SLOTS} com ${challengerCut || gm}+`]);
+
+    $('eloTable').replaceChildren(...rows.map(([e, range]) => {
+        const row = document.createElement('div');
+        row.className = 'elo-line';
+        row.append(cell('span', e.name, 'elo elo-' + e.cls), cell('span', range, 'elo-range'));
+        return row;
+    }));
+
+    $('eloPoints').replaceChildren(
+        cell('p', 'Todos começam com 0. Por Arena: 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30.'),
+        cell('p', `Desafiante: só os ${CHALLENGER_SLOTS} primeiros do ranking, e só se já forem Grão-Mestre (${gm}+). ` +
+            `O corte é a pontuação do ${CHALLENGER_SLOTS}º colocado, então sobe conforme o topo pontua.`)
+    );
+
+    openDialog($('eloDialog'));
+}
+
 const ordinal = n => n + 'º';
 const signed = n => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n);
 
@@ -86,10 +116,10 @@ function renderArena(ranking, games) {
     const gm = ELOS[0].min;
     const cut = third && third.points >= gm ? third.points : gm;
 
+    challengerCut = cut;
+
     $('arenaNote').textContent =
-        'Todos começam com 0. 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30. Atualiza sozinho a cada 15 min. ' +
-        'Elo: Ferro negativo · Bronze 0 · Prata 100 · Ouro 200 · Platina 300 · Esmeralda 400 · ' +
-        `Diamante 500 · Mestre 600 · Grão-Mestre 700 · Desafiante: só os 3 primeiros com ${cut}+ (corte atual).`;
+        'Todos começam com 0. 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30. Atualiza sozinho a cada 15 min.';
 
     // ---------- Tabela ----------
     const body = $('arenaBody');
@@ -209,6 +239,7 @@ async function toggleArenaGame(g) {
 }
 
 $('refreshArena').addEventListener('click', refreshArena);
+$('eloInfo').addEventListener('click', showEloInfo);
 
 // Carrega ao abrir a aba (e de novo se os dados tiverem mais de 2 minutos).
 document.addEventListener('viewchange', e => {

@@ -22,6 +22,7 @@
         <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.6-1.8"/></symbol>
         <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></symbol>
         <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><path d="M12 7.6v.2"/></symbol>
         <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
         <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/></symbol>
         <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></symbol>
@@ -204,6 +205,9 @@
         <div class="rank-head">
             <h1>Areninha</h1>
             <p class="muted" id="arenaInfo">Carregando...</p>
+            <button class="icon-btn" id="eloInfo" type="button" title="Elos e pontos">
+                <svg class="i"><use href="#i-info"/></svg>
+            </button>
             <button class="icon-btn" id="refreshArena" type="button" title="Atualizar">
                 <svg class="i"><use href="#i-refresh"/></svg>
             </button>
@@ -403,6 +407,18 @@
                     <svg class="i"><use href="#i-exit"/></svg><span>Sair do modo admin</span>
                 </button>
             </div>
+        </div>
+    </dialog>
+
+    <!-- ===================== ELOS DA ARENINHA ===================== -->
+    <dialog class="modal" id="eloDialog" aria-labelledby="eloTitle">
+        <div class="modal-inner">
+            <div class="elo-head">
+                <h2 id="eloTitle">Elos da Areninha</h2>
+                <button class="icon-btn" type="button" data-close title="Fechar"><svg class="i"><use href="#i-x"/></svg></button>
+            </div>
+            <div class="elo-table" id="eloTable"></div>
+            <div class="modal-text" id="eloPoints"></div>
         </div>
     </dialog>
 
