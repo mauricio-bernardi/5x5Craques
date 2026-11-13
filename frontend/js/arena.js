@@ -7,6 +7,33 @@ const ARENA_RECENT = 15;
 let arenaLoadedAt = 0;
 let arenaLoading = false;
 
+// Elo pelos pontos. Desafiante: só os 3 primeiros do ranking, e só se já forem Grão-Mestre.
+const ELOS = [
+    { min: 800, name: 'Grão-Mestre', cls: 'gm' },
+    { min: 700, name: 'Mestre', cls: 'master' },
+    { min: 600, name: 'Diamante', cls: 'diamond' },
+    { min: 500, name: 'Esmeralda', cls: 'emerald' },
+    { min: 400, name: 'Platina', cls: 'plat' },
+    { min: 300, name: 'Ouro', cls: 'gold' },
+    { min: 200, name: 'Prata', cls: 'silver' },
+    { min: 100, name: 'Bronze', cls: 'bronze' },
+    { min: -Infinity, name: 'Ferro', cls: 'iron' }
+];
+const CHALLENGER = { name: 'Desafiante', cls: 'chall' };
+const CHALLENGER_SLOTS = 3;
+
+// pos: posição no ranking (0 = primeiro), entre quem já jogou.
+function eloOf(points, pos) {
+    const elo = ELOS.find(e => points >= e.min);
+    return elo.cls === 'gm' && pos < CHALLENGER_SLOTS ? CHALLENGER : elo;
+}
+
+function eloTag(elo) {
+    const tag = cell('span', elo.name, 'elo elo-' + elo.cls);
+    tag.title = 'Elo na Areninha';
+    return tag;
+}
+
 const ordinal = n => n + 'º';
 const signed = n => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n);
 
@@ -54,8 +81,14 @@ function renderArena(ranking, games) {
         ? `${played.length} ${played.length === 1 ? 'jogador' : 'jogadores'} desde ${ARENA_START_LABEL}`
         : `Nenhuma Arena desde ${ARENA_START_LABEL}`;
 
+    // Corte do Desafiante: os pontos do 3º colocado (se ele já for Grão-Mestre).
+    const third = played[CHALLENGER_SLOTS - 1];
+    const cut = third && third.points >= 800 ? third.points : 800;
+
     $('arenaNote').textContent =
-        'Todos começam com 0. 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30. Atualiza sozinho a cada 15 min.';
+        'Todos começam com 0. 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30. Atualiza sozinho a cada 15 min. ' +
+        'Elo: Ferro abaixo de 100 · Bronze 100 · Prata 200 · Ouro 300 · Platina 400 · Esmeralda 500 · ' +
+        `Diamante 600 · Mestre 700 · Grão-Mestre 800 · Desafiante: só os 3 primeiros com ${cut}+ (corte atual).`;
 
     // ---------- Tabela ----------
     const body = $('arenaBody');
@@ -82,6 +115,7 @@ function renderArena(ranking, games) {
         const nameCell = document.createElement('td');
         if (p.opgg_url) nameCell.append(opggLink(p.opgg_url, p.name, 'player-link'));
         else nameCell.textContent = p.name;
+        if (has) nameCell.append(eloTag(eloOf(p.points, i)));
 
         const last = cell('td', has ? ordinal(p.last_placement) : '–', 'num');
         if (has) last.append(placeDot(p.last_placement));

@@ -774,6 +774,37 @@ table.rank { width: 100%; border-collapse: collapse; }
 
 .arena-line .pts.up { color: var(--gain); }
 
+/* Elo da Areninha */
+.elo {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 6px;
+    border-radius: 4px;
+    border: 1px solid currentColor;
+    font: 600 12px/18px var(--display);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    vertical-align: 1px;
+    opacity: .9;
+}
+
+.elo-iron    { color: #8a8580; }
+.elo-bronze  { color: #b9875f; }
+.elo-silver  { color: #aab6c2; }
+.elo-gold    { color: #d4b26a; }
+.elo-plat    { color: #5fbdb0; }
+.elo-emerald { color: #46c482; }
+.elo-diamond { color: #8aa4f5; }
+.elo-master  { color: #b88ae6; }
+.elo-gm      { color: #e8706a; }
+.elo-chall   {
+    color: var(--accent-ink);
+    background: linear-gradient(90deg, #f3d98c, #8fd3f0);
+    border-color: transparent;
+    opacity: 1;
+}
+
 .arena-row.off .arena-players { opacity: .45; }
 .arena-row.off .pts { color: var(--faint); }
 
@@ -1347,6 +1378,7 @@ body[data-view=rank] .toast { bottom: 24px; }
     .rank th, .rank td { padding-left: 6px; padding-right: 6px; }
     .hide-sm, .rank td:nth-child(5), .rank td:nth-child(6) { display: none; }
     .rank-admin { margin-left: 0; width: 100%; }
+    .rank .elo { display: table; margin: 2px 0 0; }
 
     .drawer-inner { padding: 14px 16px 18px; }
     .dnd { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
