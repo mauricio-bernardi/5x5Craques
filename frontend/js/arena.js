@@ -9,14 +9,14 @@ let arenaLoading = false;
 
 // Elo pelos pontos. Desafiante: só os 3 primeiros do ranking, e só se já forem Grão-Mestre.
 const ELOS = [
-    { min: 800, name: 'Grão-Mestre', cls: 'gm' },
-    { min: 700, name: 'Mestre', cls: 'master' },
-    { min: 600, name: 'Diamante', cls: 'diamond' },
-    { min: 500, name: 'Esmeralda', cls: 'emerald' },
-    { min: 400, name: 'Platina', cls: 'plat' },
-    { min: 300, name: 'Ouro', cls: 'gold' },
-    { min: 200, name: 'Prata', cls: 'silver' },
-    { min: 100, name: 'Bronze', cls: 'bronze' },
+    { min: 700, name: 'Grão-Mestre', cls: 'gm' },
+    { min: 600, name: 'Mestre', cls: 'master' },
+    { min: 500, name: 'Diamante', cls: 'diamond' },
+    { min: 400, name: 'Esmeralda', cls: 'emerald' },
+    { min: 300, name: 'Platina', cls: 'plat' },
+    { min: 200, name: 'Ouro', cls: 'gold' },
+    { min: 100, name: 'Prata', cls: 'silver' },
+    { min: 0, name: 'Bronze', cls: 'bronze' },
     { min: -Infinity, name: 'Ferro', cls: 'iron' }
 ];
 const CHALLENGER = { name: 'Desafiante', cls: 'chall' };
@@ -83,12 +83,13 @@ function renderArena(ranking, games) {
 
     // Corte do Desafiante: os pontos do 3º colocado (se ele já for Grão-Mestre).
     const third = played[CHALLENGER_SLOTS - 1];
-    const cut = third && third.points >= 800 ? third.points : 800;
+    const gm = ELOS[0].min;
+    const cut = third && third.points >= gm ? third.points : gm;
 
     $('arenaNote').textContent =
         'Todos começam com 0. 1º +30 · 2º +20 · 3º +10 · 4º −10 · 5º −20 · 6º −30. Atualiza sozinho a cada 15 min. ' +
-        'Elo: Ferro abaixo de 100 · Bronze 100 · Prata 200 · Ouro 300 · Platina 400 · Esmeralda 500 · ' +
-        `Diamante 600 · Mestre 700 · Grão-Mestre 800 · Desafiante: só os 3 primeiros com ${cut}+ (corte atual).`;
+        'Elo: Ferro negativo · Bronze 0 · Prata 100 · Ouro 200 · Platina 300 · Esmeralda 400 · ' +
+        `Diamante 500 · Mestre 600 · Grão-Mestre 700 · Desafiante: só os 3 primeiros com ${cut}+ (corte atual).`;
 
     // ---------- Tabela ----------
     const body = $('arenaBody');
