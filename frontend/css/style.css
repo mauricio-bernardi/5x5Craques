@@ -840,7 +840,7 @@ body[data-view=arena] .tier-handle { display: flex; }
 
 .tier-drawer { width: min(460px, 100%); }
 
-.tier-head { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tier-head { display: grid; gap: 8px; }
 .tier-head select { height: 34px; font-size: 13px; }
 
 .tier-list { display: grid; gap: 4px; }

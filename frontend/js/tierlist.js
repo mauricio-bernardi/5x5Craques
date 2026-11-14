@@ -48,11 +48,11 @@ async function refreshTiers() {
 }
 
 // Soma as linhas do filtro escolhido e dá a nota de cada campeão.
-function rankChampions(period, playerId) {
+// Conta todas as Arenas importadas (temporada + histórico de cada um).
+function rankChampions(playerId) {
     const byChamp = new Map();
 
     for (const r of tierRows) {
-        if (period === 'season' && !r.season) continue;
         if (playerId && r.player_id !== playerId) continue;
 
         let c = byChamp.get(r.champion);
@@ -89,9 +89,8 @@ function champLabel(c) {
 function renderTiers() {
     if (!tierRows) return;
 
-    const period = $('tierPeriod').value;
     const playerId = Number($('tierPlayer').value) || 0;
-    const { ranked, few } = rankChampions(period, playerId);
+    const { ranked, few } = rankChampions(playerId);
     const box = $('tierList');
 
     $('tierDetail').textContent = '';
@@ -180,16 +179,12 @@ function onTierFilter() {
     tierOpen.clear();
     try {
         localStorage.setItem(TIER_KEY, JSON.stringify({
-            period: $('tierPeriod').value,
             player: Number($('tierPlayer').value) || 0
         }));
     } catch (e) { /* sem armazenamento */ }
     renderTiers();
 }
 
-if (savedTierFilters().period === 'all') $('tierPeriod').value = 'all';
-
-$('tierPeriod').addEventListener('change', onTierFilter);
 $('tierPlayer').addEventListener('change', onTierFilter);
 $('refreshArena').addEventListener('click', refreshTiers);
 $('tierHandle').addEventListener('click', () => {
