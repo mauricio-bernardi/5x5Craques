@@ -818,25 +818,36 @@ table.rank { width: 100%; border-collapse: collapse; }
 .elo-line .elo { margin-left: 0; }
 .elo-range { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
 
-/* Tier list (quadrado acima das Últimas Arenas) */
-.tier-card {
-    margin-bottom: 22px;
-    padding: 12px 12px 10px;
+/* Tier list: gaveta lateral, aberta pela alça na borda direita (só na aba Areninha) */
+.tier-handle {
+    position: fixed; right: 0; top: 50%; z-index: 15;
+    display: none; align-items: center; gap: 8px;
+    padding: 14px 8px;
+    border: 1px solid var(--line); border-right: 0;
+    border-radius: 8px 0 0 8px;
     background: var(--surface);
-    border: 1px solid var(--line-soft);
-    border-radius: 10px;
+    color: var(--muted);
+    font-size: 13px; font-weight: 600;
+    writing-mode: vertical-rl;
+    transform: translateY(-50%);
+    box-shadow: -4px 0 16px rgba(0, 0, 0, .25);
+    transition: color .15s, padding .2s var(--ease);
 }
 
-.history-wrap .tier-card h2 { padding: 0; border: 0; font-size: 14px; color: var(--text); margin-right: auto; }
+.tier-handle .i { width: 16px; height: 16px; color: var(--accent); }
+.tier-handle:hover { color: var(--text); padding-right: 12px; }
+body[data-view=arena] .tier-handle { display: flex; }
 
-.tier-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-.tier-head select { width: auto; max-width: 130px; height: 30px; padding: 0 8px; font-size: 13px; }
+.tier-drawer { width: min(460px, 100%); }
+
+.tier-head { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tier-head select { height: 34px; font-size: 13px; }
 
 .tier-list { display: grid; gap: 4px; }
 .tier-list > .sub { margin: 4px 0; color: var(--muted); font-size: 13px; }
 
 .tier-row {
-    display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: stretch;
+    display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: stretch;
     background: var(--bg);
     border-radius: var(--r);
     overflow: hidden;
@@ -844,7 +855,7 @@ table.rank { width: 100%; border-collapse: collapse; }
 
 .tier-letter {
     display: grid; place-items: center;
-    font: 700 20px var(--display);
+    font: 700 24px var(--display);
     color: var(--accent-ink);
     background: var(--tier);
 }
@@ -855,14 +866,14 @@ table.rank { width: 100%; border-collapse: collapse; }
 .tier-c { --tier: #8cc79a; }
 .tier-d { --tier: #7ea6dc; }
 
-.tier-icons { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 5px 6px; min-height: 42px; }
+.tier-icons { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px; min-height: 48px; }
 
 .tier-champ { padding: 0; border: 0; background: none; border-radius: 5px; }
-.tier-champ .pic { width: 32px; height: 32px; border-radius: 5px; font-size: 10px; }
+.tier-champ .pic { width: 38px; height: 38px; border-radius: 5px; font-size: 11px; }
 .tier-champ:hover .pic, .tier-champ:focus-visible .pic { box-shadow: 0 0 0 2px var(--tier); }
 
 .tier-more {
-    height: 32px; padding: 0 8px;
+    height: 38px; padding: 0 8px;
     border: 1px solid var(--line); border-radius: 5px;
     background: none; color: var(--muted);
     font: 600 13px var(--display);
@@ -870,9 +881,9 @@ table.rank { width: 100%; border-collapse: collapse; }
 .tier-more:hover { color: var(--text); border-color: var(--muted); }
 .tier-empty { color: var(--faint); font-size: 13px; }
 
-.tier-detail { min-height: 1.4em; margin: 8px 2px 0; font-size: 13px; color: var(--text); }
+.tier-detail { margin: 0; font-size: 14px; color: var(--text); }
 .tier-detail:empty { display: none; }
-.tier-card .footnote { margin: 8px 2px 0; }
+.tier-drawer .footnote { margin: 0; }
 
 .arena-row.off .arena-players { opacity: .45; }
 .arena-row.off .pts { color: var(--faint); }
@@ -1492,4 +1503,18 @@ body[data-view=rank] .toast { bottom: 24px; }
         animation-delay: 0ms !important;
         transition-duration: .01ms !important;
     }
+}
+
+/* Celular: a alça vira um botão flutuante no canto de baixo (não cobre a tabela). */
+@media (max-width: 760px) {
+    .tier-handle {
+        top: auto; bottom: 16px; right: 16px;
+        padding: 10px 14px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        writing-mode: horizontal-tb;
+        transform: none;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, .4);
+    }
+    .tier-handle:hover { padding-right: 14px; }
 }

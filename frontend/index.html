@@ -233,20 +233,6 @@
             </div>
 
             <aside class="history-wrap">
-                <section class="tier-card" aria-labelledby="tierTitle">
-                    <div class="tier-head">
-                        <h2 id="tierTitle">Tier list</h2>
-                        <select id="tierPeriod" aria-label="Período">
-                            <option value="season">Temporada</option>
-                            <option value="all">Histórico</option>
-                        </select>
-                        <select id="tierPlayer" aria-label="Jogador"><option value="">Todos</option></select>
-                    </div>
-                    <div class="tier-list" id="tierList"><p class="sub">Carregando...</p></div>
-                    <p class="tier-detail" id="tierDetail" aria-live="polite"></p>
-                    <p class="footnote" id="tierFoot"></p>
-                </section>
-
                 <h2>Últimas Arenas</h2>
                 <div class="history" id="arenaHistory"></div>
             </aside>
@@ -421,6 +407,30 @@
                     <svg class="i"><use href="#i-exit"/></svg><span>Sair do modo admin</span>
                 </button>
             </div>
+        </div>
+    </dialog>
+
+    <!-- ===================== TIER LIST (gaveta lateral da Areninha) ===================== -->
+    <button class="tier-handle" id="tierHandle" type="button" title="Tier list dos campeões" aria-controls="tierDrawer">
+        <svg class="i"><use href="#i-trophy"/></svg><span>Tier list</span>
+    </button>
+
+    <dialog class="drawer tier-drawer" id="tierDrawer" aria-labelledby="tierTitle">
+        <div class="drawer-inner">
+            <div class="drawer-head">
+                <h2 id="tierTitle">Tier list</h2>
+                <button class="icon-btn" type="button" data-close title="Fechar"><svg class="i"><use href="#i-x"/></svg></button>
+            </div>
+            <div class="tier-head">
+                <select id="tierPeriod" aria-label="Período">
+                    <option value="season">Temporada</option>
+                    <option value="all">Histórico</option>
+                </select>
+                <select id="tierPlayer" aria-label="Jogador"><option value="">Todos</option></select>
+            </div>
+            <div class="tier-list" id="tierList"><p class="sub">Carregando...</p></div>
+            <p class="tier-detail" id="tierDetail" aria-live="polite"></p>
+            <p class="footnote" id="tierFoot"></p>
         </div>
     </dialog>
 

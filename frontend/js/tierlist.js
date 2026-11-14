@@ -1,10 +1,10 @@
-// Tier list dos campeões da Arena (quadrado na aba Areninha, acima das Últimas Arenas).
+// Tier list dos campeões da Arena (gaveta lateral da aba Areninha, aberta pela alça na borda).
 // Nota de cada campeão: colocação média de 0 a 1 (1º = 1, 6º = 0), puxada para o meio
 // quando tem poucas Arenas. Tiers por posição: 10% S, 20% A, 40% B, 20% C, 10% D.
 
 const TIER_MIN_GAMES = 3;     // menos que isso fica fora ("poucos jogos")
 const TIER_PRIOR = 3;         // quantas Arenas "médias" cada campeão começa tendo
-const TIER_SHOW = 8;          // ícones por tier antes do "+N"
+const TIER_SHOW = 15;         // ícones por tier antes do "+N" (duas linhas na gaveta)
 const TIERS = [
     { name: 'S', upTo: 0.10 },
     { name: 'A', upTo: 0.30 },
@@ -192,6 +192,10 @@ if (savedTierFilters().period === 'all') $('tierPeriod').value = 'all';
 $('tierPeriod').addEventListener('change', onTierFilter);
 $('tierPlayer').addEventListener('change', onTierFilter);
 $('refreshArena').addEventListener('click', refreshTiers);
+$('tierHandle').addEventListener('click', () => {
+    openDialog($('tierDrawer'));
+    if (Date.now() - tierLoadedAt > 120000) refreshTiers();
+});
 document.addEventListener('rosterchange', fillTierPlayers);
 
 document.addEventListener('viewchange', e => {
