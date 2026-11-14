@@ -818,6 +818,62 @@ table.rank { width: 100%; border-collapse: collapse; }
 .elo-line .elo { margin-left: 0; }
 .elo-range { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
 
+/* Tier list (quadrado acima das Últimas Arenas) */
+.tier-card {
+    margin-bottom: 22px;
+    padding: 12px 12px 10px;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+}
+
+.history-wrap .tier-card h2 { padding: 0; border: 0; font-size: 14px; color: var(--text); margin-right: auto; }
+
+.tier-head { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.tier-head select { width: auto; max-width: 130px; height: 30px; padding: 0 8px; font-size: 13px; }
+
+.tier-list { display: grid; gap: 4px; }
+.tier-list > .sub { margin: 4px 0; color: var(--muted); font-size: 13px; }
+
+.tier-row {
+    display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: stretch;
+    background: var(--bg);
+    border-radius: var(--r);
+    overflow: hidden;
+}
+
+.tier-letter {
+    display: grid; place-items: center;
+    font: 700 20px var(--display);
+    color: var(--accent-ink);
+    background: var(--tier);
+}
+
+.tier-s { --tier: #e8706a; }
+.tier-a { --tier: #e0a35f; }
+.tier-b { --tier: #d4c46a; }
+.tier-c { --tier: #8cc79a; }
+.tier-d { --tier: #7ea6dc; }
+
+.tier-icons { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 5px 6px; min-height: 42px; }
+
+.tier-champ { padding: 0; border: 0; background: none; border-radius: 5px; }
+.tier-champ .pic { width: 32px; height: 32px; border-radius: 5px; font-size: 10px; }
+.tier-champ:hover .pic, .tier-champ:focus-visible .pic { box-shadow: 0 0 0 2px var(--tier); }
+
+.tier-more {
+    height: 32px; padding: 0 8px;
+    border: 1px solid var(--line); border-radius: 5px;
+    background: none; color: var(--muted);
+    font: 600 13px var(--display);
+}
+.tier-more:hover { color: var(--text); border-color: var(--muted); }
+.tier-empty { color: var(--faint); font-size: 13px; }
+
+.tier-detail { min-height: 1.4em; margin: 8px 2px 0; font-size: 13px; color: var(--text); }
+.tier-detail:empty { display: none; }
+.tier-card .footnote { margin: 8px 2px 0; }
+
 .arena-row.off .arena-players { opacity: .45; }
 .arena-row.off .pts { color: var(--faint); }
 

@@ -510,6 +510,21 @@ join arena_results ar on ar.match_id = g.match_id
 where g.counted
 group by g.match_id, g.played_at, ar.placement;
 
+-- Tier list: campeões por jogador, separando temporada e histórico (o site soma como precisar).
+-- value: colocação de 0 a 1 (1º = 1, 6º = 0), a mesma régua do Resenhômetro.
+create or replace view arena_champions with (security_invoker = true) as
+select ar.champion,
+       ar.player_id,
+       (g.played_at >= arena_season_start()) as season,
+       count(*)::int as games,
+       sum(greatest(0, least(1, (6 - ar.placement) / 5.0)))::float8 as value_sum,
+       sum(ar.placement)::int as placement_sum,
+       (count(*) filter (where ar.placement = 1))::int as firsts
+from arena_results ar
+join arena_games g on g.match_id = ar.match_id
+where g.counted and ar.champion is not null and ar.champion <> ''
+group by ar.champion, ar.player_id, season;
+
 alter table arena_games   enable row level security;
 alter table arena_results enable row level security;
 
@@ -519,8 +534,8 @@ drop policy if exists "leitura publica" on arena_results;
 create policy "leitura publica" on arena_games   for select to anon, authenticated using (true);
 create policy "leitura publica" on arena_results for select to anon, authenticated using (true);
 
-revoke all on arena_games, arena_results, arena_ranking, arena_history, arena_teams from anon, authenticated;
-grant select on arena_games, arena_results, arena_ranking, arena_history, arena_teams to anon, authenticated;
+revoke all on arena_games, arena_results, arena_ranking, arena_history, arena_teams, arena_champions from anon, authenticated;
+grant select on arena_games, arena_results, arena_ranking, arena_history, arena_teams, arena_champions to anon, authenticated;
 
 -- Robô: guarda o PUUID de um jogador.
 create or replace function arena_set_puuid(p_secret text, p_player_id bigint, p_puuid text, p_source text)

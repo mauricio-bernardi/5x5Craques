@@ -233,6 +233,20 @@
             </div>
 
             <aside class="history-wrap">
+                <section class="tier-card" aria-labelledby="tierTitle">
+                    <div class="tier-head">
+                        <h2 id="tierTitle">Tier list</h2>
+                        <select id="tierPeriod" aria-label="Período">
+                            <option value="season">Temporada</option>
+                            <option value="all">Histórico</option>
+                        </select>
+                        <select id="tierPlayer" aria-label="Jogador"><option value="">Todos</option></select>
+                    </div>
+                    <div class="tier-list" id="tierList"><p class="sub">Carregando...</p></div>
+                    <p class="tier-detail" id="tierDetail" aria-live="polite"></p>
+                    <p class="footnote" id="tierFoot"></p>
+                </section>
+
                 <h2>Últimas Arenas</h2>
                 <div class="history" id="arenaHistory"></div>
             </aside>
@@ -451,6 +465,7 @@
     <script src="js/players.js"></script>
     <script src="js/ranking.js"></script>
     <script src="js/arena.js"></script>
+    <script src="js/tierlist.js"></script>
     <script src="js/resenha.js"></script>
     <script src="js/draft.js"></script>
     <script src="js/main.js"></script>
